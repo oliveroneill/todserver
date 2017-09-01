@@ -1,4 +1,5 @@
 # tod server
+[![Build Status](https://travis-ci.org/oliveroneill/todserver.svg?branch=master)](https://travis-ci.org/oliveroneill/todserver)
 
 A server that schedules trips so that a notification can be sent when it's
 time to leave. This was designed to be used with the
