@@ -1,0 +1,29 @@
+version: '2'
+services:
+  postgres:
+    image: postgres:9.6.3
+    ports:
+      - 5432:5432
+    volumes:
+      - /data/postgres-data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      - POSTGRES_USER=docker
+      - POSTGRES_DB=docker
+
+  todserver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports: ["80:80"]
+    links: ['postgres']
+    # TODO: enter API key as first argument below
+    command: todserver
+
+  tripwatcher:
+    build:
+      context: .
+      dockerfile: tripwatcher/Dockerfile
+    links: ['postgres']
+    # TODO: enter API key as first argument below
+    command: tripwatcher

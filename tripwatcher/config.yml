@@ -1,0 +1,26 @@
+core:
+  sync: true
+
+android:
+  enabled: true
+  # TODO: uncomment below line and add Firebase API key
+  apikey: ""
+  max_retry: 5
+
+ios:
+  enabled: true
+  key_path: "apns-dev-cert.p12"
+  password: ""
+  production: false
+  max_retry: 5
+
+log:
+  format: "string"
+  access_log: "stdout"
+  access_level: "debug"
+  error_log: "stderr"
+  error_level: "error"
+  hide_token: true
+
+stat:
+  engine: "memory"
