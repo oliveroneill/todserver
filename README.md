@@ -5,7 +5,8 @@ A server that schedules trips so that a notification can be sent when it's
 time to leave. This was designed to be used with the
 [tod app](https://github.com/oliveroneill/tod). The server tracks trip
 duration in real-time using Google Maps so that transit information is updated
-and users are alerted so that they never miss their bus.
+and users are alerted so that they never miss their bus. Tod is short for
+'time of departure'.
 
 Google Maps does not offer real-time updates for all transit system but the
 code is extensible so that additional systems can be added.
