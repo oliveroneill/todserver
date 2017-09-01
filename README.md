@@ -10,6 +10,10 @@ Google Maps does not offer real-time updates for all transit system but the
 code is extensible so that additional systems can be added.
 See the [Development section](#development).
 
+**WARNING**: This is a personal side project that is still in alpha
+development, you are responsible for your own appointments and this
+server will not be held accountable for any tardiness.
+
 ## Dependencies
 * [Docker](https://docs.docker.com/engine/installation/)
 * [docker-compose](https://docs.docker.com/compose/install/)
