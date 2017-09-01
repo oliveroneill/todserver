@@ -9,7 +9,7 @@ func TestGetNextRepeatTime(t *testing.T) {
 	// Test case: not repeating, the repeat time should be today
 	sundayDate, _ := time.Parse("2006-01-02T15:04:05-07:00 MST", "2017-07-02T00:04:05+10:00 AEST")
 	now := sundayDate.UTC()
-	var departureTime time.Time = time.Unix(sundayDate.Unix()+200, 0)
+	departureTime := time.Unix(sundayDate.Unix()+200, 0).In(sundayDate.Location())
 	repeatDays := []bool{false, false, false, false, false, false, false}
 	result := getNextRepeatTimeFromDate(now, sundayDate, departureTime, repeatDays)
 	expected := departureTime.Unix() * 1000
