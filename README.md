@@ -79,6 +79,10 @@ another data source.
 ## Testing
 All tests can be run using the command `go test ./...`
 
+## Database
+The database is a Postgres database, this is configured via the `init.sql` file.
+All queries and commands run to the database are in `api/postgres.go`.
+
 ## TODO
 This is a list of features or issues I'd like to work on in the future.
 * Real-time transit info: I'm based in Canberra and plan to include a
