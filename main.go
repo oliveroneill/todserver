@@ -10,6 +10,7 @@ import (
 	"strconv"
 )
 
+// TodServer is used for sharing a RouteFinder between requests
 type TodServer struct {
 	finder api.RouteFinder
 }
@@ -38,8 +39,8 @@ func getTripsHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request method.", 405)
 	}
 	params := r.URL.Query()
-	userId := params.Get("user_id")
-	trips, err := api.GetScheduledTrips(userId)
+	userID := params.Get("user_id")
+	trips, err := api.GetScheduledTrips(userID)
 	if err != nil {
 		http.Error(w, "Couldn't get trips.", 500)
 	}

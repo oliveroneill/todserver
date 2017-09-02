@@ -53,7 +53,7 @@ func NewMockGenerator(route *api.RouteOption, delay int) *MockGenerator {
 	}
 }
 
-func (g *MockGenerator) GenerateRoutes(trip *api.TripSchedule) <-chan *api.RouteOption {
+func (g *MockGenerator) GenerateRoute(trip *api.TripSchedule) <-chan *api.RouteOption {
 	channel := make(chan *api.RouteOption)
 	go func() {
 		defer close(channel)
@@ -109,7 +109,7 @@ func TestWatchTripTimesOut(t *testing.T) {
 func TestUpdateRouteDates(t *testing.T) {
 	// Ensure that it updates days
 	var departure int64 = 1500101524000
-	var arrival int64 = departure + 60*1000
+	arrival := departure + 60*1000
 	arrivalTime := time.Unix(arrival/1000, 0)
 	departureTime := time.Unix(departure/1000, 0)
 	originalRoute := &api.RouteOption{
@@ -118,7 +118,7 @@ func TestUpdateRouteDates(t *testing.T) {
 		ArrivalTime:   arrival,
 	}
 	// over a year in the future
-	var newDeparture int64 = departure + 1000*60*60*24*500
+	newDeparture := departure + 1000*60*60*24*500
 	newDepartureTime := time.Unix(newDeparture/1000, 0)
 	newRoute := updateRouteDates(originalRoute, newDeparture)
 	resultArrivalTime := time.Unix(newRoute.ArrivalTime/1000, 0)

@@ -11,7 +11,10 @@ import (
 	"time"
 )
 
+// IOS is a string identifier for ios devices
 const IOS = "ios"
+
+// Android is a string identifier for android devices
 const Android = "android"
 
 const dbCheckFrequency = 1 * time.Minute
@@ -22,14 +25,20 @@ const waitingWindowThreshold = 30 * 1000
 // gorush configuration file
 const configFile = "config.yml"
 
+// RouteGenerator is an interface that will send routes back over a channel
+// This is useful for timing out route search requests
 type RouteGenerator interface {
-	GenerateRoutes(trip *api.TripSchedule) <-chan *api.RouteOption
+	GenerateRoute(trip *api.TripSchedule) <-chan *api.RouteOption
 }
 
+// DefaultRouteGenerator is an implementaation of RouteGenerator that
+// wraps api.RouteFinder
 type DefaultRouteGenerator struct {
 	finder api.RouteFinder
 }
 
+// NewDefaultRouteGenerator will create an instance of DefaultRouteGenerator
+// @param finder - the finder used to generate a route
 func NewDefaultRouteGenerator(finder api.RouteFinder) *DefaultRouteGenerator {
 	return &DefaultRouteGenerator{finder: finder}
 }
@@ -171,7 +180,7 @@ func watchTrip(trip *api.TripSchedule, generator RouteGenerator) *api.RouteOptio
 		// we will always send a notification instead of potentially failing
 		// on slow or unresponsive route requests
 		select {
-		case route := <-generator.GenerateRoutes(trip):
+		case route := <-generator.GenerateRoute(trip):
 			if route == nil {
 				route = prevRoute
 			}
@@ -214,7 +223,15 @@ func getCurrentMillis() int64 {
 	return time.Now().UnixNano() / 1e6
 }
 
-func (g *DefaultRouteGenerator) GenerateRoutes(trip *api.TripSchedule) <-chan *api.RouteOption {
+// GenerateRoute will send a route back over the returned channel.
+// The returned route will be the most similar route available to that
+// specified in the input trip.
+// This is done asynchronously, if there is an error a nil value will be sent
+// over the channel
+// @param trip - a route will be searched for based on information specified
+// in this trip
+// @returns channel that will send a route or nil value if an error occurs
+func (g *DefaultRouteGenerator) GenerateRoute(trip *api.TripSchedule) <-chan *api.RouteOption {
 	channel := make(chan *api.RouteOption)
 	// will send a route over the channel
 	go func() {

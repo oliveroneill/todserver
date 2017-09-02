@@ -4,7 +4,7 @@ package api
 type DatabaseInterface interface {
 	UpsertUser(user *UserInfo)
 	ScheduleTrip(trip *TripSchedule)
-	GetTrips(userId string)
+	GetTrips(userID string)
 	Copy() DatabaseInterface
 	Close()
 }

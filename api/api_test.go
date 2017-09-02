@@ -149,7 +149,7 @@ func TestOriginalAlertSentReturnsTrue(t *testing.T) {
 
 func TestOriginalAlertSentReturnsFalse(t *testing.T) {
 	// Test case: no notifications have been sent at all
-	var lastNotification int64 = 0
+	var lastNotification int64
 	var departureTimestamp int64 = 1500102524000
 	trip := &TripSchedule{
 		Route: &RouteOption{

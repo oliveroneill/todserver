@@ -8,9 +8,11 @@ duration in real-time using Google Maps so that transit information is updated
 and users are alerted so that they never miss their bus. Tod is short for
 'time of departure'.
 
-Google Maps does not offer real-time updates for all transit system but the
+Google Maps does not offer real-time updates for all transit systems but the
 code is extensible so that additional systems can be added.
-See the [Development section](#development).
+See the [Development section](#development). Don't rely on this server for
+transit updates unless you're sure that Google Maps Directions offers regular
+updates to schedules in your city.
 
 **WARNING**: This is a personal side project that is still in alpha
 development, you are responsible for your own appointments and this
@@ -63,6 +65,11 @@ Here you'll configure the `apikey` key from Firebase for `android` and
 `key_path` for `ios` to point to a .p12 certificate for APNS.
 
 ## Development
+Tripwatcher works by regularly searching Google Maps for routes that match the
+user's query, if the trip duration suddenly takes a lot longer (due to traffic,
+for example) then the notification will be sent early. As another example, if
+the bus is running late, the notification will be delayed accordingly.
+
 `api/routes.go` lists the basic API for routes and how the server will search
 for them using the `RouteFinder` interface. This is currently implemented in
 `googlemaps.go` using the `GoogleMapsFinder` implementation. This is then used

@@ -21,6 +21,16 @@ func NewGoogleMapsFinder(apiKey string) *GoogleMapsFinder {
 	return finder
 }
 
+// FindRoutes will use Google Maps Directions API to search for routes based on
+// input
+// @param originLat - the starting position latitude
+// @param originLng - the starting position longitude
+// @param destLat - the destination latitude
+// @param destLng - the destination longitude
+// @param transportType - transit, driving, walking etc.
+// @param arrivalTime - the time of arrival to the destination
+// @param routeName - optionally specify the description. This could be the bus
+//        number for example
 func (finder *GoogleMapsFinder) FindRoutes(originLat, originLng, destLat, destLng float64,
 	transportType string, arrivalTime int64,
 	routeName string) []RouteOption {

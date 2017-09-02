@@ -7,6 +7,7 @@ import (
 	"log"
 )
 
+// DaysAWeek is the number of days in a week
 const DaysAWeek = 7
 
 // PostgresInterface - a mongodb implementation of `DatabaseInterface`
@@ -26,6 +27,8 @@ func NewPostgresInterface() PostgresInterface {
 	return *db
 }
 
+// ScheduleTrip will store this trip in a Postgres database under the trips
+// table
 func (db *PostgresInterface) ScheduleTrip(trip *TripSchedule) error {
 	sqlStatement := `
 		INSERT INTO trips
@@ -44,6 +47,8 @@ func (db *PostgresInterface) ScheduleTrip(trip *TripSchedule) error {
 	return err
 }
 
+// UpsertUser will insert this user if they don't exist, otherwise it will
+// update the user with this notification token
 func (db *PostgresInterface) UpsertUser(user *UserInfo) error {
 	sqlStatement := `
 		INSERT INTO users (user_id, notification_token, os)
@@ -55,7 +60,8 @@ func (db *PostgresInterface) UpsertUser(user *UserInfo) error {
 	return nil
 }
 
-func (db *PostgresInterface) GetTrips(userId string) ([]TripSchedule, error) {
+// GetTrips will return all trips scheduled for this user
+func (db *PostgresInterface) GetTrips(userID string) ([]TripSchedule, error) {
 	sqlStatement := `
 		SELECT
 		trips.id, users.user_id, users.notification_token, users.os, trips.description,
@@ -65,7 +71,7 @@ func (db *PostgresInterface) GetTrips(userId string) ([]TripSchedule, error) {
 		trips.enabled, trips.last_notification_sent
 		FROM users, trips
 		WHERE trips.user_id = users.user_id AND trips.user_id=$1`
-	rows, err := db.conn.Query(sqlStatement, userId)
+	rows, err := db.conn.Query(sqlStatement, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -101,12 +107,14 @@ func (db *PostgresInterface) GetTrips(userId string) ([]TripSchedule, error) {
 	return trips, nil
 }
 
+// SetLastNotificationTime will store the time of the last notification
 func (db *PostgresInterface) SetLastNotificationTime(trip *TripSchedule, timestamp int64) error {
 	sqlStatement := `UPDATE trips SET last_notification_sent = $1 WHERE id = $2`
 	_, err := db.conn.Exec(sqlStatement, timestamp, trip.ID)
 	return err
 }
 
+// IsEnabled will return true if the specified trip is enabled
 func (db *PostgresInterface) IsEnabled(trip *TripSchedule) bool {
 	sqlStatement := `SELECT enabled trips WHERE id = $1`
 	var enabled bool
@@ -117,15 +125,18 @@ func (db *PostgresInterface) IsEnabled(trip *TripSchedule) bool {
 	return enabled
 }
 
-func (db *PostgresInterface) EnableDisableTrip(tripId string, userId string) error {
+// EnableDisableTrip will switch the current setting of the trip
+// ie. enabled goes to disabled or disabled goes to enabled
+func (db *PostgresInterface) EnableDisableTrip(tripID string, userID string) error {
 	sqlStatement := `UPDATE trips SET enabled = NOT enabled WHERE id = $1 AND user_id = $2`
-	_, err := db.conn.Exec(sqlStatement, tripId, userId)
+	_, err := db.conn.Exec(sqlStatement, tripID, userID)
 	return err
 }
 
-func (db *PostgresInterface) DeleteTrip(tripId string, userId string) error {
+// DeleteTrip will delete the specified trip
+func (db *PostgresInterface) DeleteTrip(tripID string, userID string) error {
 	sqlStatement := `DELETE FROM trips WHERE id = $1 AND user_id = $2`
-	_, err := db.conn.Exec(sqlStatement, tripId, userId)
+	_, err := db.conn.Exec(sqlStatement, tripID, userID)
 	return err
 }
 
@@ -134,6 +145,7 @@ func (db *PostgresInterface) Close() {
 	db.conn.Close()
 }
 
+// GetAllScheduledTrips will list of trips stored in the trips table
 func (db *PostgresInterface) GetAllScheduledTrips() ([]*TripSchedule, error) {
 	sqlStatement := `
 		SELECT
