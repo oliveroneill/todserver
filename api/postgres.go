@@ -120,6 +120,13 @@ func (db *PostgresInterface) IsEnabled(trip *TripSchedule) bool {
 	var enabled bool
 	err := db.conn.QueryRow(sqlStatement, trip.ID).Scan(&enabled)
 	if err != nil {
+		// If we can't find the trip then it's deleted, therefore
+		// it's disabled
+		// TODO: postgres shoudln't be making decisions
+		if err == sql.ErrNoRows {
+			return false
+		}
+		// any other error and we return the previously set value
 		return trip.Enabled
 	}
 	return enabled
