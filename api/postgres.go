@@ -116,7 +116,7 @@ func (db *PostgresInterface) SetLastNotificationTime(trip *TripSchedule, timesta
 
 // IsEnabled will return true if the specified trip is enabled
 func (db *PostgresInterface) IsEnabled(trip *TripSchedule) bool {
-	sqlStatement := `SELECT enabled trips WHERE id = $1`
+	sqlStatement := `SELECT enabled FROM trips WHERE id = $1`
 	var enabled bool
 	err := db.conn.QueryRow(sqlStatement, trip.ID).Scan(&enabled)
 	if err != nil {
