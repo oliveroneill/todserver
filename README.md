@@ -64,8 +64,8 @@ You will also need to need to set up a `config.yml` in `tripwatcher/`.
 Here you'll configure the `apikey` key from Firebase for `android` and
 `key_path` for `ios` to point to a .p12 certificate for APNS.
 
-You may also be required to specify a token for APNS if setting the server
-up with a production certificate. The token will be your bundle identifier.
+You may also be required to specify a topic for APNS if setting the server
+up with a production certificate. The topic will be your bundle identifier.
 This should be set in `tripwatcher/main.go` in the `sendNotification` function.
 
 ## Development

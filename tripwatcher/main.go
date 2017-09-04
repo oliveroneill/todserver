@@ -288,7 +288,7 @@ func updateRouteDates(route *api.RouteOption, departureTime int64) *api.RouteOpt
 }
 
 func sendNotification(route *api.RouteOption, user *api.UserInfo) error {
-	// If using with production you must specify a Token in this struct
+	// If using with production you must specify a Topic in this struct
 	req := gorush.PushNotification{
 		Tokens:  []string{user.NotificationToken},
 		Message: fmt.Sprintf("Time to leave for route: %s", route.Description),
@@ -311,6 +311,7 @@ func sendNotification(route *api.RouteOption, user *api.UserInfo) error {
 		gorush.PushToIOS(req)
 	} else {
 		req.Platform = gorush.PlatFormAndroid
+		// You can specify the notification icon that the client will use here
 		err := gorush.CheckMessage(req)
 		if err != nil {
 			fmt.Println(err)
