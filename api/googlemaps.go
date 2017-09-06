@@ -96,7 +96,7 @@ func getDepartureTime(route maps.Route, arrivalTime int64) int64 {
 	firstLeg := route.Legs[0]
 	depart := firstLeg.DepartureTime.UnixNano() / 1e6
 	if depart < 0 {
-		durationMs := int64(firstLeg.Duration / time.Second)
+		durationMs := int64(firstLeg.Duration / time.Millisecond)
 		depart = arrivalTime - durationMs
 	}
 	return depart
