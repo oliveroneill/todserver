@@ -16,7 +16,7 @@ CREATE TABLE trips (
     route_arrival_time       bigint,
     route_departure_time     bigint,
     route_name               varchar(240),
-    waiting_window           int,
+    waiting_window           int,                    -- the notification should be sent this many milliseconds before departure tim
     repeat_days              bool[],
     enabled                  bool,
     last_notification_sent   bigint                  -- timestamp that last notification was sent

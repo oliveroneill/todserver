@@ -35,6 +35,7 @@ type TripSchedule struct {
 	Route       *RouteOption `json:"route"`
 	// the date the user entered when searching for routes
 	InputArrivalTime *Date  `json:"input_arrival_time"`
+	// the alert should be sent this many milliseconds before departure time
 	WaitingWindowMs  int64  `json:"waiting_window_ms"`
 	TransportType    string `json:"transport_type"`
 	RepeatDays       []bool `json:"repeat_days"`
