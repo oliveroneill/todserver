@@ -78,6 +78,7 @@ func TestGetNextRepeatTimeOverDaylightSavings(t *testing.T) {
 	// Test case: repeating next Wednesday across Daylight savings
 	// Daylight savings switches over on the first Sunday of October
 	saturdayDate, _ := time.Parse("2006-01-02T15:04:05-07:00 MST", "2017-09-30T00:04:05+10:00 AEST")
+	loc, _ := time.LoadLocation("Australia/Sydney")
 	// These tests are based on the current time being the last notification
 	now := time.Unix(saturdayDate.Unix(), 0).UTC()
 	// Ensure that we're testing across timezones
@@ -89,14 +90,16 @@ func TestGetNextRepeatTimeOverDaylightSavings(t *testing.T) {
 	// Repeats on Saturday and Wednesday and the last notification time is Saturday,
 	// therefore Wednesday is the next repeat
 	repeatDays := []bool{false, false, true, false, false, true, false}
-	result := getNextRepeatTimeFromDate(now, saturdayDate, saturdayDate, repeatDays)
+	result := getNextRepeatTimeFromDate(now, saturdayDate.In(loc), saturdayDate.In(loc), repeatDays)
+	// to ensure that the hour has changed (Brisbane does not do daylight savings)
+	locWithoutDaylightSavings, _ := time.LoadLocation("Australia/Brisbane")
 	dateWithMatchingTime := time.Date(
 		saturdayDate.Year(),
 		saturdayDate.Month(),
 		saturdayDate.Day()+daysUntilNextRepeat,
-		saturdayDate.Hour(),
+		saturdayDate.Hour() - 1,
 		saturdayDate.Minute(), saturdayDate.Second(),
-		saturdayDate.Nanosecond(), saturdayDate.Location(),
+		saturdayDate.Nanosecond(), locWithoutDaylightSavings,
 	)
 	expected := dateWithMatchingTime.Unix() * 1000
 	if result != expected {

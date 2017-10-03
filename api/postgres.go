@@ -34,8 +34,8 @@ func (db *PostgresInterface) ScheduleTrip(trip *TripSchedule) error {
 		INSERT INTO trips
 		(user_id, description, origin, dest, input_arrival_time, input_arrival_local_date,
 		route_arrival_time, route_departure_time, waiting_window, transport_type,
-		route_name, repeat_days, enabled, last_notification_sent)
-		VALUES ($1, $2, point($3, $4), point($5, $6), $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`
+		route_name, repeat_days, enabled, last_notification_sent, timezone_location)
+		VALUES ($1, $2, point($3, $4), point($5, $6), $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`
 	_, err := db.conn.Exec(sqlStatement, trip.User.ID, trip.Route.Description,
 		trip.Origin.Lat, trip.Origin.Lng,
 		trip.Destination.Lat, trip.Destination.Lng,
@@ -43,7 +43,7 @@ func (db *PostgresInterface) ScheduleTrip(trip *TripSchedule) error {
 		trip.Route.ArrivalTime, trip.Route.DepartureTime,
 		trip.WaitingWindowMs, trip.TransportType,
 		trip.Route.Name, pq.Array(trip.RepeatDays),
-		trip.Enabled, trip.LastNotificationSent)
+		trip.Enabled, trip.LastNotificationSent, trip.InputArrivalTime.TimezoneLocation)
 	return err
 }
 
@@ -68,7 +68,7 @@ func (db *PostgresInterface) GetTrips(userID string) ([]TripSchedule, error) {
 		trips.origin, trips.dest, trips.input_arrival_time, trips.input_arrival_local_date,
 		trips.route_arrival_time, trips.route_departure_time,
 		trips.waiting_window, trips.transport_type, trips.route_name, trips.repeat_days,
-		trips.enabled, trips.last_notification_sent
+		trips.enabled, trips.last_notification_sent, trips.timezone_location
 		FROM users, trips
 		WHERE trips.user_id = users.user_id AND trips.user_id=$1`
 	rows, err := db.conn.Query(sqlStatement, userID)
@@ -90,7 +90,8 @@ func (db *PostgresInterface) GetTrips(userID string) ([]TripSchedule, error) {
 			&t.Route.ArrivalTime,
 			&t.Route.DepartureTime, &t.WaitingWindowMs,
 			&t.TransportType, &t.Route.Name,
-			pq.Array(&t.RepeatDays), &t.Enabled, &t.LastNotificationSent)
+			pq.Array(&t.RepeatDays), &t.Enabled, &t.LastNotificationSent,
+			&t.InputArrivalTime.TimezoneLocation)
 		if err != nil {
 			continue
 		}
@@ -160,7 +161,7 @@ func (db *PostgresInterface) GetAllScheduledTrips() ([]*TripSchedule, error) {
 		trips.origin, trips.dest, trips.input_arrival_time, trips.input_arrival_local_date,
 		trips.route_arrival_time, trips.route_departure_time,
 		trips.waiting_window, trips.transport_type, trips.route_name, trips.repeat_days,
-		trips.enabled, trips.last_notification_sent
+		trips.enabled, trips.last_notification_sent, trips.timezone_location
 		FROM users, trips
 		WHERE trips.user_id = users.user_id`
 	rows, err := db.conn.Query(sqlStatement)
@@ -182,7 +183,8 @@ func (db *PostgresInterface) GetAllScheduledTrips() ([]*TripSchedule, error) {
 			&t.Route.ArrivalTime,
 			&t.Route.DepartureTime, &t.WaitingWindowMs,
 			&t.TransportType, &t.Route.Name,
-			pq.Array(&t.RepeatDays), &t.Enabled, &t.LastNotificationSent)
+			pq.Array(&t.RepeatDays), &t.Enabled, &t.LastNotificationSent,
+			&t.InputArrivalTime.TimezoneLocation)
 		if err != nil {
 			fmt.Println(err)
 			continue
