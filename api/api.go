@@ -24,6 +24,7 @@ type Point struct {
 type Date struct {
 	String    string `json:"local_date_string"`
 	Timestamp int64  `json:"timestamp"`
+	TimezoneLocation string `json:"timezone_location"`
 }
 
 // TripSchedule is all information regarding a scheduled trip
@@ -209,7 +210,11 @@ func GetArrivalTime(trip *TripSchedule) int64 {
 // is the next repeating day
 func getNextTime(trip *TripSchedule, ts int64) int64 {
 	if wasOriginalAlertSent(trip) && IsRepeating(trip) {
-		localArrival := getLocalTime(trip.InputArrivalTime.String, ts)
+		localArrival := getLocalTime(
+			trip.InputArrivalTime.String,
+			trip.InputArrivalTime.TimezoneLocation,
+			ts,
+		)
 		return getNextRepeatTime(trip.LastNotificationSent,
 			localArrival,
 			trip.RepeatDays)
@@ -224,14 +229,18 @@ func wasOriginalAlertSent(trip *TripSchedule) bool {
 }
 
 // getLocalTime will return a timestamp in the timezone as the date string
-func getLocalTime(dateString string, ts int64) time.Time {
+func getLocalTime(dateString string, timezoneName string, ts int64) time.Time {
 	layout := "2006-01-02T15:04:05-07:00 MST"
 	t, err := time.Parse(layout, dateString)
 	// if there's an error then just use the default timezone
 	if err != nil {
 		return time.Unix(ts/1000, 0)
 	}
-	return time.Unix(ts/1000, 0).In(t.Location())
+	loc, err := time.LoadLocation(timezoneName)
+	if err != nil {
+		loc = t.Location()
+	}
+	return time.Unix(ts/1000, 0).In(loc)
 }
 
 // getNextRepeatTime will return the departure time as a unix timestamp

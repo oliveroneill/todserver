@@ -16,6 +16,7 @@ CREATE TABLE trips (
     route_arrival_time       bigint,
     route_departure_time     bigint,
     route_name               varchar(240),
+    timezone_location        varchar(240),           -- timezone name such as 'America/Chicago'
     waiting_window           int,                    -- the notification should be sent this many milliseconds before departure tim
     repeat_days              bool[],
     enabled                  bool,
