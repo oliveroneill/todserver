@@ -52,9 +52,13 @@ func main() {
 	}
 
 	// set up push notification configuration
-	gorush.PushConf = config.BuildDefaultPushConf()
 	var err error
-	gorush.PushConf, err = config.LoadConfYaml(configFile)
+	// passing in an empty string will load the default
+	gorush.PushConf, err = config.LoadConf("")
+	if err != nil {
+		panic(fmt.Sprintf("Failed to load default gorush config: '%v'", err))
+	}
+	gorush.PushConf, err = config.LoadConf(configFile)
 	if err != nil {
 		panic(fmt.Sprintf("Load yaml config file error: '%v'", err))
 	}
