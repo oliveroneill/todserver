@@ -149,7 +149,7 @@ func (s *TodServer) getRoutesHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	mapsKeyArg := kingpin.Arg("googlemapskey", "Google Maps API key for querying routes").Required().String()
-	nxtBusKeyArg := kingpin.Arg("nxtbuskey", "NXTBUS API key for real time data in Canberra").String()
+	nxtBusKeyArg := kingpin.Flag("nxtbuskey", "NXTBUS API key for real time data in Canberra").String()
 	kingpin.Parse()
 	mapsAPIKey := *mapsKeyArg
 	if len(mapsAPIKey) == 0 {
