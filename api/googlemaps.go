@@ -41,15 +41,16 @@ func (finder *GoogleMapsFinder) FindRoutes(originLat, originLng, destLat, destLn
 		depart := getDepartureTime(route, arrivalTime)
 		arrive := getArrivalTime(route, arrivalTime)
 		desc := getDescription(route)
+		details := getTransitDetails(route)
 		if len(routeName) > 0 {
 			if getRouteName(route) == routeName {
 				option := NewRouteOption(depart, arrive, routeName, desc)
-				option.MapsDetails = &route
+				option.TransitDetails = details
 				options = append(options, option)
 			}
 		} else {
 			option := NewRouteOption(depart, arrive, getRouteName(route), desc)
-			option.MapsDetails = &route
+			option.TransitDetails = details
 			options = append(options, option)
 		}
 	}
@@ -77,11 +78,14 @@ func getRoutes(apiKey string, originLat float64, originLng float64, destLat floa
 }
 
 func getRouteName(route maps.Route) string {
-	step := getFirstTransitStep(route)
-	if step == nil {
-		return "Unknown"
+	for _, leg := range route.Legs {
+		for _, step := range leg.Steps {
+			if step.TravelMode == "TRANSIT" {
+				return step.TransitDetails.Line.ShortName
+			}
+		}
 	}
-	return step.TransitDetails.Line.ShortName
+	return "Unknown"
 }
 
 func getArrivalTime(route maps.Route, arrivalTime int64) int64 {
@@ -103,11 +107,11 @@ func getDepartureTime(route maps.Route, arrivalTime int64) int64 {
 	return depart
 }
 
-func getFirstTransitStep(route maps.Route) *maps.Step {
+func getTransitDetails(route maps.Route) *maps.TransitDetails {
 	for _, leg := range route.Legs {
 		for _, step := range leg.Steps {
 			if step.TravelMode == "TRANSIT" {
-				return step
+				return step.TransitDetails
 			}
 		}
 	}

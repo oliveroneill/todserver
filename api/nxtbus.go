@@ -2,7 +2,6 @@ package api
 
 import (
 	"github.com/oliveroneill/nxtbus-go"
-	"googlemaps.github.io/maps"
 	"math"
 	"time"
 )
@@ -53,7 +52,7 @@ func NewNxtBusAPI(apiKey string) *NxtBusAPI {
 	return i
 }
 
-// GetVisits will return all routes going through the specified stop name
+// GetRoutes will return all routes going through the specified stop name
 func (api *NxtBusAPI) GetVisits(stopName string) ([]nxtbus.MonitoredStopVisit, error) {
 	id, err := nxtbus.StopNameToID(stopName)
 	if err != nil {
@@ -87,30 +86,22 @@ func (finder *NxtBusFinder) FindRoutes(originLat, originLng, destLat,
 		if option.DepartureTime-now >= NxtBusThresholdMs {
 			continue
 		}
-		if option.MapsDetails == nil {
+		if option.TransitDetails == nil {
 			continue
 		}
-		transitStep := getFirstTransitStep(*option.MapsDetails)
-		transitDetails := transitStep.TransitDetails
-		if transitDetails == nil {
+		details := option.TransitDetails
+		// if the TransitDetails indicate not Transport Canberra then skip
+		if details.Line.Agencies[0].Name != TransportCanberraName {
 			continue
 		}
-		// if the MapsDetails indicate not Transport Canberra then skip
-		if transitDetails.Line.Agencies[0].Name != TransportCanberraName {
-			continue
-		}
-		finder.updateUsingRealTimeData(&options[i], transitStep)
+		finder.updateUsingRealTimeData(&options[i])
 	}
 	return options
 }
 
 // NOTE: This will modify the option passed in without copying
-func (finder *NxtBusFinder) updateUsingRealTimeData(option *RouteOption, transitStep *maps.Step) {
-	transitDetails := transitStep.TransitDetails
-	if transitDetails == nil {
-		return
-	}
-	visits, err := finder.nxtBusAPI.GetVisits(transitDetails.DepartureStop.Name)
+func (finder *NxtBusFinder) updateUsingRealTimeData(option *RouteOption) {
+	visits, err := finder.nxtBusAPI.GetVisits(option.TransitDetails.DepartureStop.Name)
 	if err != nil {
 		return
 	}
