@@ -108,7 +108,14 @@ func getDepartureTime(route maps.Route, arrivalTime int64) int64 {
 }
 
 func getTransitDetails(route maps.Route) *maps.TransitDetails {
-	return route.Legs[0].Steps[0].TransitDetails
+	for _, leg := range route.Legs {
+		for _, step := range leg.Steps {
+			if step.TravelMode == "TRANSIT" {
+				return step.TransitDetails
+			}
+		}
+	}
+	return nil
 }
 
 func getDescription(route maps.Route) string {
