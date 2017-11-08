@@ -22,8 +22,8 @@ type Point struct {
 // Date stores the Unix timestamp in milliseconds as well as a local date
 // string. This is useful for timezone calculations
 type Date struct {
-	String    string `json:"local_date_string"`
-	Timestamp int64  `json:"timestamp"`
+	String           string `json:"local_date_string"`
+	Timestamp        int64  `json:"timestamp"`
 	TimezoneLocation string `json:"timezone_location"`
 }
 
@@ -35,12 +35,12 @@ type TripSchedule struct {
 	Destination Point        `json:"destination"`
 	Route       *RouteOption `json:"route"`
 	// the date the user entered when searching for routes
-	InputArrivalTime *Date  `json:"input_arrival_time"`
+	InputArrivalTime *Date `json:"input_arrival_time"`
 	// the alert should be sent this many milliseconds before departure time
-	WaitingWindowMs  int64  `json:"waiting_window_ms"`
-	TransportType    string `json:"transport_type"`
-	RepeatDays       []bool `json:"repeat_days"`
-	Enabled          bool   `json:"enabled"`
+	WaitingWindowMs int64  `json:"waiting_window_ms"`
+	TransportType   string `json:"transport_type"`
+	RepeatDays      []bool `json:"repeat_days"`
+	Enabled         bool   `json:"enabled"`
 	// timestamp the last notification for this trip was sent
 	LastNotificationSent int64 `json:"last_notification"`
 }

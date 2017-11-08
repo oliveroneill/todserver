@@ -97,7 +97,7 @@ func TestGetNextRepeatTimeOverDaylightSavings(t *testing.T) {
 		saturdayDate.Year(),
 		saturdayDate.Month(),
 		saturdayDate.Day()+daysUntilNextRepeat,
-		saturdayDate.Hour() - 1,
+		saturdayDate.Hour()-1,
 		saturdayDate.Minute(), saturdayDate.Second(),
 		saturdayDate.Nanosecond(), locWithoutDaylightSavings,
 	)

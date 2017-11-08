@@ -1,9 +1,9 @@
 package api
 
 import (
+	"github.com/oliveroneill/nxtbus-go"
 	"math"
 	"time"
-	"github.com/oliveroneill/nxtbus-go"
 )
 
 // NxtBusThresholdMs is used so that NXTBUS will track 90 minutes ahead
@@ -77,7 +77,7 @@ func (finder *NxtBusFinder) FindRoutes(originLat, originLng, destLat,
 	for i, option := range options {
 		now := time.Now().UnixNano() / 1e6
 		// if its more than 90 minutes then skip
-		if option.DepartureTime - now >= NxtBusThresholdMs {
+		if option.DepartureTime-now >= NxtBusThresholdMs {
 			continue
 		}
 		if option.TransitDetails == nil {
