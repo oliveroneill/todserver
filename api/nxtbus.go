@@ -53,7 +53,7 @@ func NewNxtBusAPI(apiKey string) *NxtBusAPI {
 }
 
 // GetRoutes will return all routes going through the specified stop name
-func (api *NxtBusAPI) GetRoutes(stopName string) ([]nxtbus.MonitoredStopVisit, error) {
+func (api *NxtBusAPI) GetVisits(stopName string) ([]nxtbus.MonitoredStopVisit, error) {
 	id, err := nxtbus.StopNameToID(stopName)
 	if err != nil {
 		return nil, err
@@ -61,6 +61,12 @@ func (api *NxtBusAPI) GetRoutes(stopName string) ([]nxtbus.MonitoredStopVisit, e
 	resp, err := nxtbus.MakeStopMonitoringRequest(api.apiKey, id)
 	if err != nil {
 		return nil, err
+	}
+	if resp.StopMonitoringDelivery == nil {
+		return []nxtbus.MonitoredStopVisit{}, nil
+	}
+	if resp.StopMonitoringDelivery.MonitoredStopVisits == nil {
+		return []nxtbus.MonitoredStopVisit{}, nil
 	}
 	return resp.StopMonitoringDelivery.MonitoredStopVisits, nil
 }
@@ -117,6 +123,9 @@ func (finder *NxtBusFinder) updateUsingRealTimeData(option *RouteOption) {
 			closest = diff
 			bestChoice = &visits[i]
 		}
+	}
+	if bestChoice == nil {
+		return
 	}
 	expectedDeparture := nxtbus.ParseDate(bestChoice.ExpectedDepartureTime)
 	// ensure we aren't missing data
