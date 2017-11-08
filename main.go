@@ -148,13 +148,20 @@ func (s *TodServer) getRoutesHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	keyArg := kingpin.Arg("googlemapskey", "Google Maps API key for querying routes").Required().String()
+	mapsKeyArg := kingpin.Arg("googlemapskey", "Google Maps API key for querying routes").Required().String()
+	nxtBusKeyArg := kingpin.Arg("nxtbuskey", "NXTBUS API key for real time data in Canberra").String()
 	kingpin.Parse()
-	apiKey := *keyArg
-	if len(apiKey) == 0 {
+	mapsAPIKey := *mapsKeyArg
+	if len(mapsAPIKey) == 0 {
 		log.Fatal("No api key set.")
 	}
-	server := &TodServer{finder: api.NewGoogleMapsFinder(apiKey)}
+	nxtBusAPIKey := *nxtBusKeyArg
+	mapsFinder := api.NewGoogleMapsFinder(mapsAPIKey)
+	var finder api.RouteFinder = mapsFinder
+	if len(nxtBusAPIKey) > 0 {
+		finder = api.NewNxtBusFinder(nxtBusAPIKey, mapsFinder)
+	}
+	server := &TodServer{finder: finder}
 	http.HandleFunc("/api/register-user", registerUserHandler)
 	http.HandleFunc("/api/get-scheduled-trips", getTripsHandler)
 	http.HandleFunc("/api/schedule-trip", scheduleTripHandler)

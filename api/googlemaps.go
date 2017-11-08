@@ -41,12 +41,17 @@ func (finder *GoogleMapsFinder) FindRoutes(originLat, originLng, destLat, destLn
 		depart := getDepartureTime(route, arrivalTime)
 		arrive := getArrivalTime(route, arrivalTime)
 		desc := getDescription(route)
+		details := getTransitDetails(route)
 		if len(routeName) > 0 {
 			if getRouteName(route) == routeName {
-				options = append(options, NewRouteOption(depart, arrive, routeName, desc))
+				option := NewRouteOption(depart, arrive, routeName, desc)
+				option.TransitDetails = details
+				options = append(options, option)
 			}
 		} else {
-			options = append(options, NewRouteOption(depart, arrive, getRouteName(route), desc))
+			option := NewRouteOption(depart, arrive, getRouteName(route), desc)
+			option.TransitDetails = details
+			options = append(options, option)
 		}
 	}
 	return options
@@ -100,6 +105,10 @@ func getDepartureTime(route maps.Route, arrivalTime int64) int64 {
 		depart = arrivalTime - durationMs
 	}
 	return depart
+}
+
+func getTransitDetails(route maps.Route) *maps.TransitDetails {
+	return route.Legs[0].Steps[0].TransitDetails
 }
 
 func getDescription(route maps.Route) string {

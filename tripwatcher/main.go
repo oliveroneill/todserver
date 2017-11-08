@@ -44,11 +44,18 @@ func NewDefaultRouteGenerator(finder api.RouteFinder) *DefaultRouteGenerator {
 }
 
 func main() {
-	keyArg := kingpin.Arg("googlemapskey", "Google Maps API key for querying routes").Required().String()
+	mapsKeyArg := kingpin.Arg("googlemapskey", "Google Maps API key for querying routes").Required().String()
+	nxtBusKeyArg := kingpin.Arg("nxtbuskey", "NXTBUS API key for real time data in Canberra").String()
 	kingpin.Parse()
-	apiKey := *keyArg
-	if len(apiKey) == 0 {
+	mapsAPIKey := *mapsKeyArg
+	if len(mapsAPIKey) == 0 {
 		log.Fatal("No api key set.")
+	}
+	nxtBusAPIKey := *nxtBusKeyArg
+	mapsFinder := api.NewGoogleMapsFinder(mapsAPIKey)
+	var finder api.RouteFinder = mapsFinder
+	if len(nxtBusAPIKey) > 0 {
+		finder = api.NewNxtBusFinder(nxtBusAPIKey, mapsFinder)
 	}
 
 	// set up push notification configuration
@@ -71,7 +78,6 @@ func main() {
 	// so that we don't watch a trip twice
 	watchList := make(map[string]bool)
 	mux := &sync.Mutex{}
-	finder := api.NewGoogleMapsFinder(apiKey)
 	trips, err := api.GetAllScheduledTrips()
 	if err == nil {
 		watchTrips(trips, finder, watchList, mux)

@@ -89,7 +89,5 @@ All queries and commands run to the database are in `api/postgres.go`.
 
 ## TODO
 This is a list of features or issues I'd like to work on in the future.
-* Real-time transit info: I'm based in Canberra and plan to include a
-NXTBUS finder extension on the current Google Maps finder.
 * Setup APNS feedback service checks and Firebase Cloud Messaging uninstall check
 * Add in an optional warning notification ten minutes before it's time to leave

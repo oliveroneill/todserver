@@ -1,5 +1,7 @@
 package api
 
+import "googlemaps.github.io/maps"
+
 // RouteOption is a search result found through RouteFinder
 // This is information useful for the user to determine their trip
 type RouteOption struct {
@@ -7,6 +9,9 @@ type RouteOption struct {
 	ArrivalTime   int64  `json:"arrival_time"`
 	Name          string `json:"name"`
 	Description   string `json:"description"`
+	// optional transit information
+	// This will only be set by GoogleMapsFinder
+	TransitDetails *maps.TransitDetails
 }
 
 // RouteFinder - a generic interface for finding routes
