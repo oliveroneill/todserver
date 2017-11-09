@@ -52,7 +52,7 @@ func NewNxtBusAPI(apiKey string) *NxtBusAPI {
 	return i
 }
 
-// GetRoutes will return all routes going through the specified stop name
+// GetVisits will return all routes going through the specified stop name
 func (api *NxtBusAPI) GetVisits(stopName string) ([]nxtbus.MonitoredStopVisit, error) {
 	id, err := nxtbus.StopNameToID(stopName)
 	if err != nil {
@@ -105,20 +105,23 @@ func (finder *NxtBusFinder) updateUsingRealTimeData(option *RouteOption) {
 	if err != nil {
 		return
 	}
+	// use the transit details departure time, since there may be other legs
+	// on the trip
+	mapsDeparture := int64(option.TransitDetails.DepartureTime.UnixNano() / 1e6)
 	var closest float64 = -1
 	var bestChoice *nxtbus.MonitoredStopVisit
-	// find MonitoredStopVisit with closest expected departure to option's departure time
+	// find MonitoredStopVisit with closest scheduled departure to option's departure time
 	for i, data := range visits {
 		if data.LineName != option.Name {
 			continue
 		}
-		date := nxtbus.ParseDate(data.AimedArrivalTime)
+		date := nxtbus.ParseDate(data.AimedDepartureTime)
 		// some responses seem to be missing data
 		if date == nil {
 			continue
 		}
-		aimedArrival := int64(date.UnixNano() / 1e6)
-		diff := math.Abs(float64(option.ArrivalTime - aimedArrival))
+		aimedDeparture := int64(date.UnixNano() / 1e6)
+		diff := math.Abs(float64(mapsDeparture - aimedDeparture))
 		if bestChoice == nil || diff < closest {
 			closest = diff
 			bestChoice = &visits[i]
@@ -132,11 +135,9 @@ func (finder *NxtBusFinder) updateUsingRealTimeData(option *RouteOption) {
 	if expectedDeparture == nil {
 		return
 	}
-	expectedArrival := nxtbus.ParseDate(bestChoice.ExpectedArrivalTime)
-	// ensure we aren't missing data
-	if expectedArrival == nil {
-		return
-	}
-	option.DepartureTime = expectedDeparture.UnixNano() / 1e6
-	option.ArrivalTime = expectedArrival.UnixNano() / 1e6
+	// Figure out how much time we've gained or lost compared to the schedule
+	diff := mapsDeparture - (expectedDeparture.UnixNano() / 1e6)
+	// move the trip start and end accordingly
+	option.DepartureTime -= diff
+	option.ArrivalTime -= diff
 }
