@@ -11,7 +11,7 @@ type RouteOption struct {
 	Description   string `json:"description"`
 	// optional transit information
 	// This will only be set by GoogleMapsFinder
-	TransitDetails *maps.TransitDetails
+	transitDetails *maps.TransitDetails
 }
 
 // RouteFinder - a generic interface for finding routes

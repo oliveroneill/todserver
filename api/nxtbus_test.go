@@ -112,7 +112,7 @@ func TestFindRoutesRealTimeThreshold(t *testing.T) {
 		ArrivalTime:    arrival,
 		Name:           "",
 		Description:    "",
-		TransitDetails: generateValidTransitDetails(departure),
+		transitDetails: generateValidTransitDetails(departure),
 	}
 	options := []RouteOption{route}
 	realTimeDeparture := now + 2*60*1000
@@ -143,7 +143,7 @@ func TestFindRoutesUsesRealTimeData(t *testing.T) {
 		ArrivalTime:    scheduledArrival,
 		Name:           name,
 		Description:    "",
-		TransitDetails: details,
+		transitDetails: details,
 	}
 	options := []RouteOption{route}
 	realTimeDeparture := now + 2*60*1000
@@ -158,7 +158,7 @@ func TestFindRoutesUsesRealTimeData(t *testing.T) {
 		ArrivalTime:    scheduledArrival - (departure - realTimeDeparture),
 		Name:           name,
 		Description:    "",
-		TransitDetails: details,
+		transitDetails: details,
 	}
 	// make a copy of the options since real time finder will modify
 	// without copying
@@ -181,7 +181,7 @@ func TestFindRoutesFallsBackWhenMissingStopInfo(t *testing.T) {
 		ArrivalTime:    scheduledArrival,
 		Name:           name,
 		Description:    "",
-		TransitDetails: generateValidTransitDetails(departure),
+		transitDetails: generateValidTransitDetails(departure),
 	}
 	options := []RouteOption{route}
 	finder := new(NxtBusFinder)
@@ -208,7 +208,7 @@ func TestFindRoutesFallsBackWhenMissingExpectedDates(t *testing.T) {
 		ArrivalTime:    scheduledArrival,
 		Name:           name,
 		Description:    "",
-		TransitDetails: generateValidTransitDetails(departure),
+		transitDetails: generateValidTransitDetails(departure),
 	}
 	options := []RouteOption{route}
 	realTimeDeparture := now + 2*60*1000
@@ -244,7 +244,7 @@ func TestFindRoutesFallsBackWhenDifferentBusCompany(t *testing.T) {
 		Name:          name,
 		Description:   "",
 		// invalid details
-		TransitDetails: generateInvalidTransitDetails(departure),
+		transitDetails: generateInvalidTransitDetails(departure),
 	}
 	options := []RouteOption{route}
 	realTimeDeparture := now + 2*60*1000
@@ -274,7 +274,7 @@ func TestFindRoutesFallsBackWhenNotTransit(t *testing.T) {
 		ArrivalTime:    scheduledArrival,
 		Name:           name,
 		Description:    "",
-		TransitDetails: generateValidTransitDetails(departure),
+		transitDetails: generateValidTransitDetails(departure),
 	}
 	options := []RouteOption{route}
 	realTimeDeparture := now + 2*60*1000

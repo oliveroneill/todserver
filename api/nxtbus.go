@@ -86,11 +86,11 @@ func (finder *NxtBusFinder) FindRoutes(originLat, originLng, destLat,
 		if option.DepartureTime-now >= NxtBusThresholdMs {
 			continue
 		}
-		if option.TransitDetails == nil {
+		if option.transitDetails == nil {
 			continue
 		}
-		details := option.TransitDetails
-		// if the TransitDetails indicate not Transport Canberra then skip
+		details := option.transitDetails
+		// if the transitDetails indicate not Transport Canberra then skip
 		if details.Line.Agencies[0].Name != TransportCanberraName {
 			continue
 		}
@@ -101,13 +101,13 @@ func (finder *NxtBusFinder) FindRoutes(originLat, originLng, destLat,
 
 // NOTE: This will modify the option passed in without copying
 func (finder *NxtBusFinder) updateUsingRealTimeData(option *RouteOption) {
-	visits, err := finder.nxtBusAPI.GetVisits(option.TransitDetails.DepartureStop.Name)
+	visits, err := finder.nxtBusAPI.GetVisits(option.transitDetails.DepartureStop.Name)
 	if err != nil {
 		return
 	}
 	// use the transit details departure time, since there may be other legs
 	// on the trip
-	mapsDeparture := int64(option.TransitDetails.DepartureTime.UnixNano() / 1e6)
+	mapsDeparture := int64(option.transitDetails.DepartureTime.UnixNano() / 1e6)
 	var closest float64 = -1
 	var bestChoice *nxtbus.MonitoredStopVisit
 	// find MonitoredStopVisit with closest scheduled departure to option's departure time

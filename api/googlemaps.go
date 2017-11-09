@@ -45,12 +45,12 @@ func (finder *GoogleMapsFinder) FindRoutes(originLat, originLng, destLat, destLn
 		if len(routeName) > 0 {
 			if getRouteName(route) == routeName {
 				option := NewRouteOption(depart, arrive, routeName, desc)
-				option.TransitDetails = details
+				option.transitDetails = details
 				options = append(options, option)
 			}
 		} else {
 			option := NewRouteOption(depart, arrive, getRouteName(route), desc)
-			option.TransitDetails = details
+			option.transitDetails = details
 			options = append(options, option)
 		}
 	}
