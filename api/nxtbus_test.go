@@ -75,7 +75,7 @@ func convertUnixTimestampToTime(ms int64) time.Time {
 
 func convertUnixTimestampToNxtBusDate(ms int64) string {
 	date := convertUnixTimestampToTime(ms)
-	return date.Format("2006-01-02T15:04:05.000000")
+	return date.Format("2006-01-02T15:04:05-07:00")
 }
 
 func generateStopVisitInfo(
