@@ -143,7 +143,9 @@ func (finder *NxtBusFinder) updateUsingRealTimeData(option *RouteOption) {
 	if expectedDeparture == nil {
 		return
 	}
-	// Figure out how much time we've gained or lost compared to the schedule
+	// Figure out how much time we've gained or lost compared to the schedule.
+	// We use the Google Maps departure time to compensate if it has
+	// an incorrect transit departure time
 	diff := mapsDeparture - (expectedDeparture.UnixNano() / 1e6)
 	// move the trip start and end accordingly
 	option.DepartureTime -= diff
