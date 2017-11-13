@@ -12,6 +12,10 @@ const NxtBusThresholdMs = 90 * 60 * 1000
 // TransportCanberraName is the name stored in NXTBUS API response
 const TransportCanberraName = "Transport Canberra"
 
+// StopTimeThreshold is a threshold to determine whether a stop date from
+// Google Maps is close enough to the NXTBUS date to be the same route
+const StopTimeThresholdMs = 2 * 60 * 1000
+
 // NxtBusFinder - an implementation of RouteFinder that uses GoogleMaps
 // and NXTBUS for accurate departure times in Canberra
 type NxtBusFinder struct {
@@ -122,6 +126,10 @@ func (finder *NxtBusFinder) updateUsingRealTimeData(option *RouteOption) {
 		}
 		aimedDeparture := int64(date.UnixNano() / 1e6)
 		diff := math.Abs(float64(mapsDeparture - aimedDeparture))
+		// make sure the times aren't too far apart
+		if diff > StopTimeThresholdMs {
+			continue
+		}
 		if bestChoice == nil || diff < closest {
 			closest = diff
 			bestChoice = &visits[i]

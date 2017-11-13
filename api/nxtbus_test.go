@@ -294,3 +294,37 @@ func TestFindRoutesFallsBackWhenNotTransit(t *testing.T) {
 		t.Error("Expected", route, "found", routes[0])
 	}
 }
+
+func TestFindRoutesFallsBackWhenOutOfThreshold(t *testing.T) {
+	name := "729"
+	now := time.Now().Unix() * 1000
+	scheduledArrival := now + 11*60*1000
+	departure := now + 10*60*1000
+	route := RouteOption{
+		DepartureTime:  departure,
+		ArrivalTime:    scheduledArrival,
+		Name:           name,
+		Description:    "",
+		transitDetails: generateValidTransitDetails(departure),
+	}
+	options := []RouteOption{route}
+	realTimeDeparture := now + 2*60*1000
+	// the aimed time is 10 minutes later and therefore should not
+	// match up with the Google Maps data
+	aimedDeparture := departure + 10*60*1000
+	visits := generateStopVisitInfo(
+		now, name, aimedDeparture, realTimeDeparture,
+	)
+	finder := new(NxtBusFinder)
+	finder.nxtBusAPI = NewMockNxtBusFinder(visits)
+	// make a copy of the options since real time finder will modify
+	// without copying
+	tmp := make([]RouteOption, len(options))
+	copy(tmp, options)
+	finder.finder = NewMockMapsFinder(tmp)
+	// set transport mode to driving
+	routes := finder.FindRoutes(1, 1, 1, 1, "transit", now, "")
+	if !reflect.DeepEqual(routes[0], route) {
+		t.Error("Expected", route, "found", routes[0])
+	}
+}
