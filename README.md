@@ -89,5 +89,10 @@ All queries and commands run to the database are in `api/postgres.go`.
 
 ## TODO
 This is a list of features or issues I'd like to work on in the future.
+* Use `time.Time` values instead of unix timestamps. Since we mostly focus on
+wall clock time as opposed to elapsed time, we aren't affected by
+[leap seconds](https://github.com/golang/proposal/blob/master/design/12914-monotonic.md).
+But it would be good to be robust to API changes like the monotonic clock ones
+in the future.
 * Setup APNS feedback service checks and Firebase Cloud Messaging uninstall check
 * Add in an optional warning notification ten minutes before it's time to leave
