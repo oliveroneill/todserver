@@ -211,8 +211,8 @@ func watchTrip(trip *api.TripSchedule, generator RouteGenerator) *api.RouteOptio
 			}
 			// sleep until next check
 			time.Sleep(time.Duration(nextCheck) * time.Millisecond)
-			// if nextCheck matches timeLeft then we're done
-			if nextCheck == timeLeft {
+			// if we've reached or passed the notification time then we're done
+			if getCurrentMillis() >= notificationTime {
 				return prevRoute
 			}
 			// update the timeout so that we don't miss the notification
