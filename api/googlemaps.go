@@ -32,7 +32,7 @@ func NewGoogleMapsFinder(apiKey string) *GoogleMapsFinder {
 // @param routeName - optionally specify the description. This could be the bus
 //        number for example
 func (finder *GoogleMapsFinder) FindRoutes(originLat, originLng, destLat, destLng float64,
-	transportType string, arrivalTime int64,
+	transportType string, arrivalTime time.Time,
 	routeName string) []RouteOption {
 	routes := getRoutes(finder.apiKey, originLat, originLng, destLat, destLng,
 		transportType, arrivalTime)
@@ -58,7 +58,7 @@ func (finder *GoogleMapsFinder) FindRoutes(originLat, originLng, destLat, destLn
 }
 
 func getRoutes(apiKey string, originLat float64, originLng float64, destLat float64,
-	destLng float64, transportType string, arrivalTime int64) []maps.Route {
+	destLng float64, transportType string, arrivalTime time.Time) []maps.Route {
 	c, err := maps.NewClient(maps.WithAPIKey(apiKey))
 	if err != nil {
 		fmt.Println("fatal error:", err)
@@ -68,7 +68,7 @@ func getRoutes(apiKey string, originLat float64, originLng float64, destLat floa
 		Origin:       fmt.Sprintf("%f, %f", originLat, originLng),
 		Destination:  fmt.Sprintf("%f, %f", destLat, destLng),
 		Mode:         maps.Mode(transportType),
-		ArrivalTime:  fmt.Sprintf("%d", arrivalTime/1000),
+		ArrivalTime:  fmt.Sprintf("%d", arrivalTime.UnixNano()/1e9),
 	}
 	resp, _, err := c.Directions(context.Background(), r)
 	if err != nil {
@@ -88,21 +88,22 @@ func getRouteName(route maps.Route) string {
 	return "Unknown"
 }
 
-func getArrivalTime(route maps.Route, arrivalTime int64) int64 {
+func getArrivalTime(route maps.Route, arrivalTime time.Time) time.Time {
 	lastLeg := route.Legs[len(route.Legs)-1]
-	arrive := lastLeg.ArrivalTime.UnixNano() / 1e6
-	if arrive < 0 {
+	arrive := lastLeg.ArrivalTime
+	var zero time.Time
+	if arrive.Equal(zero) {
 		arrive = arrivalTime
 	}
 	return arrive
 }
 
-func getDepartureTime(route maps.Route, arrivalTime int64) int64 {
+func getDepartureTime(route maps.Route, arrivalTime time.Time) time.Time {
 	firstLeg := route.Legs[0]
-	depart := firstLeg.DepartureTime.UnixNano() / 1e6
-	if depart < 0 {
-		durationMs := int64(firstLeg.Duration / time.Millisecond)
-		depart = arrivalTime - durationMs
+	depart := firstLeg.DepartureTime
+	var zero time.Time
+	if depart.Equal(zero) {
+		depart = arrivalTime.Add(-firstLeg.Duration)
 	}
 	return depart
 }

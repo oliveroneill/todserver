@@ -21,7 +21,7 @@ func NewMockMapsFinder(options []RouteOption) *MockMapsFinder {
 }
 
 func (finder *MockMapsFinder) FindRoutes(originLat, originLng, destLat,
-	destLng float64, transportType string, arrivalTime int64,
+	destLng float64, transportType string, arrivalTime time.Time,
 	routeName string) []RouteOption {
 	return finder.options
 }
@@ -43,7 +43,7 @@ func (f *MockNxtBusFinder) GetVisits(stopName string) ([]nxtbus.MonitoredStopVis
 	return f.visits, nil
 }
 
-func generateValidTransitDetails(departureTime int64) *maps.TransitDetails {
+func generateValidTransitDetails(departureTime time.Time) *maps.TransitDetails {
 	return &maps.TransitDetails{
 		Line: maps.TransitLine{
 			Agencies: []*maps.TransitAgency{
@@ -52,11 +52,11 @@ func generateValidTransitDetails(departureTime int64) *maps.TransitDetails {
 				},
 			},
 		},
-		DepartureTime: convertUnixTimestampToTime(departureTime),
+		DepartureTime: departureTime,
 	}
 }
 
-func generateInvalidTransitDetails(departureTime int64) *maps.TransitDetails {
+func generateInvalidTransitDetails(departureTime time.Time) *maps.TransitDetails {
 	return &maps.TransitDetails{
 		Line: maps.TransitLine{
 			Agencies: []*maps.TransitAgency{
@@ -65,48 +65,43 @@ func generateInvalidTransitDetails(departureTime int64) *maps.TransitDetails {
 				},
 			},
 		},
-		DepartureTime: convertUnixTimestampToTime(departureTime),
+		DepartureTime: departureTime,
 	}
 }
 
-func convertUnixTimestampToTime(ms int64) time.Time {
-	return time.Unix(0, ms*1e6).In(time.UTC)
-}
-
-func convertUnixTimestampToNxtBusDate(ms int64) string {
-	date := convertUnixTimestampToTime(ms)
+func dateToNxtbusString(date time.Time) string {
 	return date.Format("2006-01-02T15:04:05-07:00")
 }
 
 func generateStopVisitInfo(
-	now int64, name string, scheduledDeparture, realTimeDeparture int64,
+	now time.Time, name string, scheduledDeparture, realTimeDeparture time.Time,
 ) []nxtbus.MonitoredStopVisit {
 	// Real time data
 	realTimeRoute := nxtbus.MonitoredStopVisit{
 		LineName:              name,
-		AimedDepartureTime:    convertUnixTimestampToNxtBusDate(scheduledDeparture),
-		ExpectedDepartureTime: convertUnixTimestampToNxtBusDate(realTimeDeparture),
+		AimedDepartureTime:    dateToNxtbusString(scheduledDeparture),
+		ExpectedDepartureTime: dateToNxtbusString(realTimeDeparture),
 	}
 	visits := []nxtbus.MonitoredStopVisit{
 		nxtbus.MonitoredStopVisit{
 			LineName:              name,
-			AimedDepartureTime:    convertUnixTimestampToNxtBusDate(now + 9),
-			ExpectedDepartureTime: convertUnixTimestampToNxtBusDate(realTimeDeparture + 5),
+			AimedDepartureTime:    dateToNxtbusString(now.Add(9 * time.Millisecond)),
+			ExpectedDepartureTime: dateToNxtbusString(realTimeDeparture.Add(5 * time.Millisecond)),
 		},
 		realTimeRoute,
 		nxtbus.MonitoredStopVisit{
 			LineName:              "Different name",
-			AimedDepartureTime:    convertUnixTimestampToNxtBusDate(now + 2),
-			ExpectedDepartureTime: convertUnixTimestampToNxtBusDate(realTimeDeparture - 5),
+			AimedDepartureTime:    dateToNxtbusString(now.Add(2 * time.Millisecond)),
+			ExpectedDepartureTime: dateToNxtbusString(realTimeDeparture.Add(-5 * time.Millisecond)),
 		},
 	}
 	return visits
 }
 
 func TestFindRoutesRealTimeThreshold(t *testing.T) {
-	now := time.Now().Unix() * 1000
-	arrival := now + 100*60*1000
-	departure := now + 100*60*1000
+	now := time.Now()
+	arrival := now.Add(100 * time.Minute)
+	departure := now.Add(100 * time.Minute)
 	route := RouteOption{
 		DepartureTime:  departure,
 		ArrivalTime:    arrival,
@@ -115,7 +110,7 @@ func TestFindRoutesRealTimeThreshold(t *testing.T) {
 		transitDetails: generateValidTransitDetails(departure),
 	}
 	options := []RouteOption{route}
-	realTimeDeparture := now + 2*60*1000
+	realTimeDeparture := now.Add(2 * time.Minute)
 	visits := generateStopVisitInfo(
 		now, "", departure, realTimeDeparture,
 	)
@@ -134,9 +129,9 @@ func TestFindRoutesRealTimeThreshold(t *testing.T) {
 
 func TestFindRoutesUsesRealTimeData(t *testing.T) {
 	name := "729"
-	now := time.Now().Unix() * 1000
-	scheduledArrival := now + 11*60*1000
-	departure := now + 10*60*1000
+	now := time.Now()
+	scheduledArrival := now.Add(11 * time.Minute)
+	departure := now.Add(10 * time.Minute)
 	details := generateValidTransitDetails(departure)
 	route := RouteOption{
 		DepartureTime:  departure,
@@ -146,16 +141,17 @@ func TestFindRoutesUsesRealTimeData(t *testing.T) {
 		transitDetails: details,
 	}
 	options := []RouteOption{route}
-	realTimeDeparture := now + 2*60*1000
+	realTimeDeparture := now.Add(2 * time.Minute)
 	visits := generateStopVisitInfo(
 		now, name, departure, realTimeDeparture,
 	)
 	finder := new(NxtBusFinder)
 	finder.nxtBusAPI = NewMockNxtBusFinder(visits)
 	// Expected route option after real time update
+	arrival := scheduledArrival.Add(-(departure.Sub(realTimeDeparture)))
 	expected := RouteOption{
-		DepartureTime:  realTimeDeparture,
-		ArrivalTime:    scheduledArrival - (departure - realTimeDeparture),
+		DepartureTime:  realTimeDeparture.Truncate(time.Second),
+		ArrivalTime:    arrival.Truncate(time.Second),
 		Name:           name,
 		Description:    "",
 		transitDetails: details,
@@ -166,16 +162,20 @@ func TestFindRoutesUsesRealTimeData(t *testing.T) {
 	copy(tmp, options)
 	finder.finder = NewMockMapsFinder(tmp)
 	routes := finder.FindRoutes(1, 1, 1, 1, "transit", now, "")
-	if !reflect.DeepEqual(routes[0], expected) {
-		t.Error("Expected", expected, "found", routes[0])
+	if len(routes) != 1 {
+		t.Error("Expected length", 1, "found", len(routes))
+	}
+	result := routes[0]
+	if reflect.DeepEqual(expected, result) {
+		t.Error("Expected", expected, "found", result)
 	}
 }
 
 func TestFindRoutesFallsBackWhenMissingStopInfo(t *testing.T) {
 	name := "729"
-	now := time.Now().Unix() * 1000
-	scheduledArrival := now + 11*60*1000
-	departure := now + 10*60*1000
+	now := time.Now()
+	scheduledArrival := now.Add(11 * time.Minute)
+	departure := now.Add(10 * time.Minute)
 	route := RouteOption{
 		DepartureTime:  departure,
 		ArrivalTime:    scheduledArrival,
@@ -200,9 +200,9 @@ func TestFindRoutesFallsBackWhenMissingStopInfo(t *testing.T) {
 
 func TestFindRoutesFallsBackWhenMissingExpectedDates(t *testing.T) {
 	name := "729"
-	now := time.Now().Unix() * 1000
-	scheduledArrival := now + 11*60*1000
-	departure := now + 10*60*1000
+	now := time.Now()
+	scheduledArrival := now.Add(11 * time.Minute)
+	departure := now.Add(10 * time.Minute)
 	route := RouteOption{
 		DepartureTime:  departure,
 		ArrivalTime:    scheduledArrival,
@@ -211,7 +211,7 @@ func TestFindRoutesFallsBackWhenMissingExpectedDates(t *testing.T) {
 		transitDetails: generateValidTransitDetails(departure),
 	}
 	options := []RouteOption{route}
-	realTimeDeparture := now + 2*60*1000
+	realTimeDeparture := now.Add(2 * time.Minute)
 	visits := generateStopVisitInfo(
 		now, name, departure, realTimeDeparture,
 	)
@@ -235,9 +235,9 @@ func TestFindRoutesFallsBackWhenMissingExpectedDates(t *testing.T) {
 
 func TestFindRoutesFallsBackWhenDifferentBusCompany(t *testing.T) {
 	name := "729"
-	now := time.Now().Unix() * 1000
-	scheduledArrival := now + 11*60*1000
-	departure := now + 10*60*1000
+	now := time.Now()
+	scheduledArrival := now.Add(11 * time.Minute)
+	departure := now.Add(10 * time.Minute)
 	route := RouteOption{
 		DepartureTime: departure,
 		ArrivalTime:   scheduledArrival,
@@ -247,7 +247,7 @@ func TestFindRoutesFallsBackWhenDifferentBusCompany(t *testing.T) {
 		transitDetails: generateInvalidTransitDetails(departure),
 	}
 	options := []RouteOption{route}
-	realTimeDeparture := now + 2*60*1000
+	realTimeDeparture := now.Add(2 * time.Minute)
 	visits := generateStopVisitInfo(
 		now, name, departure, realTimeDeparture,
 	)
@@ -266,9 +266,9 @@ func TestFindRoutesFallsBackWhenDifferentBusCompany(t *testing.T) {
 
 func TestFindRoutesFallsBackWhenNotTransit(t *testing.T) {
 	name := "729"
-	now := time.Now().Unix() * 1000
-	scheduledArrival := now + 11*60*1000
-	departure := now + 10*60*1000
+	now := time.Now()
+	scheduledArrival := now.Add(11 * time.Minute)
+	departure := now.Add(10 * time.Minute)
 	route := RouteOption{
 		DepartureTime:  departure,
 		ArrivalTime:    scheduledArrival,
@@ -277,7 +277,7 @@ func TestFindRoutesFallsBackWhenNotTransit(t *testing.T) {
 		transitDetails: generateValidTransitDetails(departure),
 	}
 	options := []RouteOption{route}
-	realTimeDeparture := now + 2*60*1000
+	realTimeDeparture := now.Add(2 * time.Minute)
 	visits := generateStopVisitInfo(
 		now, name, departure, realTimeDeparture,
 	)
@@ -297,9 +297,9 @@ func TestFindRoutesFallsBackWhenNotTransit(t *testing.T) {
 
 func TestFindRoutesFallsBackWhenOutOfThreshold(t *testing.T) {
 	name := "729"
-	now := time.Now().Unix() * 1000
-	scheduledArrival := now + 11*60*1000
-	departure := now + 10*60*1000
+	now := time.Now()
+	scheduledArrival := now.Add(11 * time.Minute)
+	departure := now.Add(10 * time.Minute)
 	route := RouteOption{
 		DepartureTime:  departure,
 		ArrivalTime:    scheduledArrival,
@@ -308,10 +308,10 @@ func TestFindRoutesFallsBackWhenOutOfThreshold(t *testing.T) {
 		transitDetails: generateValidTransitDetails(departure),
 	}
 	options := []RouteOption{route}
-	realTimeDeparture := now + 2*60*1000
+	realTimeDeparture := now.Add(2 * time.Minute)
 	// the aimed time is 10 minutes later and therefore should not
 	// match up with the Google Maps data
-	aimedDeparture := departure + 10*60*1000
+	aimedDeparture := departure.Add(10 * time.Minute)
 	visits := generateStopVisitInfo(
 		now, name, aimedDeparture, realTimeDeparture,
 	)

@@ -7,8 +7,8 @@ import (
 )
 
 func TestRoundToNextInterval(t *testing.T) {
-	var sixteenMinutes int64 = 16 * 60 * 1000
-	var fiveMinutes int64 = 5 * 60 * 1000
+	sixteenMinutes := 16 * time.Minute
+	fiveMinutes := 5 * time.Minute
 	result := roundToNextInterval(sixteenMinutes)
 	if result != fiveMinutes {
 		t.Error("Expected", result, "to be", fiveMinutes)
@@ -16,8 +16,8 @@ func TestRoundToNextInterval(t *testing.T) {
 }
 
 func TestRoundToNextIntervalRoundsToNearestMinute(t *testing.T) {
-	var fifteenMinutes int64 = 15 * 60 * 1000
-	var fourMinutes int64 = 4 * 60 * 1000
+	fifteenMinutes := 15 * time.Minute
+	fourMinutes := 4 * time.Minute
 	result := roundToNextInterval(fifteenMinutes)
 	if result != fourMinutes {
 		t.Error("Expected", result, "to be", fourMinutes)
@@ -25,8 +25,8 @@ func TestRoundToNextIntervalRoundsToNearestMinute(t *testing.T) {
 }
 
 func TestRoundToNextIntervalLongTimeToGo(t *testing.T) {
-	var threeHours int64 = 3 * 60 * 60 * 1000
-	var twoHours int64 = 2 * 60 * 60 * 1000
+	threeHours := 3 * time.Hour
+	twoHours := 2 * time.Hour
 	result := roundToNextInterval(threeHours)
 	if result != twoHours {
 		t.Error("Expected", result, "to be", twoHours)
@@ -34,7 +34,7 @@ func TestRoundToNextIntervalLongTimeToGo(t *testing.T) {
 }
 
 func TestRoundToNextIntervalLessThanAMinute(t *testing.T) {
-	var oneMinute int64 = 1 * 60 * 100
+	oneMinute := 1 * time.Minute
 	result := roundToNextInterval(oneMinute)
 	if result != oneMinute {
 		t.Error("Expected", result, "to be", oneMinute)
@@ -66,11 +66,11 @@ func (g *MockGenerator) GenerateRoute(trip *api.TripSchedule) <-chan *api.RouteO
 }
 
 func TestWatchTrip(t *testing.T) {
-	now := time.Now().Unix() * 1000
+	now := time.Now()
 	trip := &api.TripSchedule{
 		Route: &api.RouteOption{
 			Description:   "Original description",
-			DepartureTime: now + 2*60*60*1000,
+			DepartureTime: now.Add(2 * time.Hour),
 		},
 		RepeatDays: []bool{false, false, false, false, false, false, false},
 	}
@@ -85,10 +85,13 @@ func TestWatchTrip(t *testing.T) {
 }
 
 func TestWatchTripTimesOut(t *testing.T) {
-	now := time.Now().Unix() * 1000
+	now := time.Now()
+	originalDepartureTime := now.Add(100 * time.Millisecond)
 	originalRoute := &api.RouteOption{
-		Description:   "Original description",
-		DepartureTime: now + 100,
+		Description: "Original description",
+		// Truncate to millisecond level since the API will retrieve trips
+		// without nanosecond precision
+		DepartureTime: originalDepartureTime.Truncate(time.Millisecond),
 	}
 	trip := &api.TripSchedule{
 		Route:      originalRoute,
@@ -108,53 +111,48 @@ func TestWatchTripTimesOut(t *testing.T) {
 
 func TestUpdateRouteDates(t *testing.T) {
 	// Ensure that it updates days
-	var departure int64 = 1500101524000
-	arrival := departure + 60*1000
-	arrivalTime := time.Unix(arrival/1000, 0)
-	departureTime := time.Unix(departure/1000, 0)
+	departure := time.Unix(0, 1500101524000*1e6)
+	arrival := departure.Add(1 * time.Minute)
 	originalRoute := &api.RouteOption{
 		Description:   "Original description",
 		DepartureTime: departure,
 		ArrivalTime:   arrival,
 	}
 	// over a year in the future
-	newDeparture := departure + 1000*60*60*24*500
-	newDepartureTime := time.Unix(newDeparture/1000, 0)
+	newDeparture := departure.Add(500 * 24 * time.Hour)
 	newRoute := updateRouteDates(originalRoute, newDeparture)
-	resultArrivalTime := time.Unix(newRoute.ArrivalTime/1000, 0)
-	resultDepartureTime := time.Unix(newRoute.DepartureTime/1000, 0)
 
 	// check resulting departure time matches day
-	if resultDepartureTime.Year() != newDepartureTime.Year() {
-		t.Error("Expected", resultDepartureTime.Year(), "to equal", newDepartureTime.Year())
+	if newRoute.DepartureTime.Year() != newDeparture.Year() {
+		t.Error("Expected", newRoute.DepartureTime.Year(), "to equal", newDeparture.Year())
 	}
-	if resultDepartureTime.Month() != newDepartureTime.Month() {
-		t.Error("Expected", resultDepartureTime.Month(), "to equal", newDepartureTime.Month())
+	if newRoute.DepartureTime.Month() != newDeparture.Month() {
+		t.Error("Expected", newRoute.DepartureTime.Month(), "to equal", newDeparture.Month())
 	}
-	if resultDepartureTime.Day() != newDepartureTime.Day() {
-		t.Error("Expected", resultDepartureTime.Day(), "to equal", newDepartureTime.Day())
+	if newRoute.DepartureTime.Day() != newDeparture.Day() {
+		t.Error("Expected", newRoute.DepartureTime.Day(), "to equal", newDeparture.Day())
 	}
 
 	// check resulting arrival time matches day
-	if resultArrivalTime.Year() != newDepartureTime.Year() {
-		t.Error("Expected", resultArrivalTime.Year(), "to equal", newDepartureTime.Year())
+	if newRoute.ArrivalTime.Year() != newDeparture.Year() {
+		t.Error("Expected", newRoute.ArrivalTime.Year(), "to equal", newDeparture.Year())
 	}
-	if resultArrivalTime.Month() != newDepartureTime.Month() {
-		t.Error("Expected", resultArrivalTime.Month(), "to equal", newDepartureTime.Month())
+	if newRoute.ArrivalTime.Month() != newDeparture.Month() {
+		t.Error("Expected", newRoute.ArrivalTime.Month(), "to equal", newDeparture.Month())
 	}
-	if resultArrivalTime.Day() != newDepartureTime.Day() {
-		t.Error("Expected", resultArrivalTime.Day(), "to equal", newDepartureTime.Day())
+	if newRoute.ArrivalTime.Day() != newDeparture.Day() {
+		t.Error("Expected", newRoute.ArrivalTime.Day(), "to equal", newDeparture.Day())
 	}
 
 	// check resulting departure time has same hour, minute, second etc.
-	resultTimeOfDay := resultDepartureTime.Format("15:04:05")
-	expectedTimeOfDay := departureTime.Format("15:04:05")
+	resultTimeOfDay := newRoute.DepartureTime.Format("15:04:05")
+	expectedTimeOfDay := departure.Format("15:04:05")
 	if resultTimeOfDay != expectedTimeOfDay {
 		t.Error("Expected", resultTimeOfDay, "to equal", expectedTimeOfDay)
 	}
 
-	resultTimeOfDay = resultArrivalTime.Format("15:04:05")
-	expectedTimeOfDay = arrivalTime.Format("15:04:05")
+	resultTimeOfDay = newRoute.ArrivalTime.Format("15:04:05")
+	expectedTimeOfDay = arrival.Format("15:04:05")
 	if resultTimeOfDay != expectedTimeOfDay {
 		t.Error("Expected", resultTimeOfDay, "to equal", expectedTimeOfDay)
 	}

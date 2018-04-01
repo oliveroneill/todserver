@@ -154,11 +154,11 @@ func getRouteFromDescription(trip *TripSchedule, routes []RouteOption) (RouteOpt
 	return filtered[0], nil
 }
 
-func findRouteClosestToArrival(arrivalTime int64, routes []RouteOption) RouteOption {
+func findRouteClosestToArrival(arrivalTime time.Time, routes []RouteOption) RouteOption {
 	var closest int64 = -1
 	var choice RouteOption
 	for _, r := range routes {
-		diff := int64(math.Abs(float64(r.ArrivalTime) - float64(arrivalTime)))
+		diff := int64(math.Abs(float64(r.ArrivalTime.Sub(arrivalTime))))
 		if diff < closest || closest == -1 {
 			choice = r
 			closest = diff
@@ -180,8 +180,8 @@ func IsRepeating(trip *TripSchedule) bool {
 // GetDepartureTime will return the next departure time for the trip
 // If this is a repeating trip then the departure time will be updated to the
 // next repeating day
-func GetDepartureTime(trip *TripSchedule) int64 {
-	return getNextTime(trip, trip.Route.DepartureTime)
+func GetDepartureTime(trip *TripSchedule) time.Time {
+	return getNextTime(trip, trip.Route.DepartureTime.UnixNano()/1e6)
 }
 
 // GetInputArrivalTime will return the arrival time that the user input for the
@@ -189,15 +189,15 @@ func GetDepartureTime(trip *TripSchedule) int64 {
 // what the user originally searched for.
 // If this is a repeating trip then this timestamp will be updated to the
 // next repeating day
-func GetInputArrivalTime(trip *TripSchedule) int64 {
+func GetInputArrivalTime(trip *TripSchedule) time.Time {
 	return getNextTime(trip, trip.InputArrivalTime.Timestamp)
 }
 
 // GetArrivalTime will return the next arrival time for the trip
 // If this is a repeating trip then the arrival time will be updated to the
 // next repeating day
-func GetArrivalTime(trip *TripSchedule) int64 {
-	return getNextTime(trip, trip.Route.ArrivalTime)
+func GetArrivalTime(trip *TripSchedule) time.Time {
+	return getNextTime(trip, trip.Route.ArrivalTime.UnixNano()/1e6)
 }
 
 // getNextTime will return an updated timestamp using the repeated
@@ -208,7 +208,7 @@ func GetArrivalTime(trip *TripSchedule) int64 {
 // updated day
 // @returns a new timestamp with same time of day as input but the day
 // is the next repeating day
-func getNextTime(trip *TripSchedule, ts int64) int64 {
+func getNextTime(trip *TripSchedule, ts int64) time.Time {
 	if wasOriginalAlertSent(trip) && IsRepeating(trip) {
 		localArrival := getLocalTime(
 			trip.InputArrivalTime.String,
@@ -219,7 +219,7 @@ func getNextTime(trip *TripSchedule, ts int64) int64 {
 			localArrival,
 			trip.RepeatDays)
 	}
-	return ts
+	return time.Unix(0, ts*1e6)
 }
 
 func wasOriginalAlertSent(trip *TripSchedule) bool {
@@ -243,8 +243,8 @@ func getLocalTime(dateString string, timezoneName string, ts int64) time.Time {
 	return time.Unix(ts/1000, 0).In(loc)
 }
 
-// getNextRepeatTime will return the departure time as a unix timestamp
-// based on when the last notification was sent
+// getNextRepeatTime will return the departure time based on when the last
+// notification was sent
 // @param lastNotification - when the last notification for this trip was sent
 // as a timestamp in milliseconds
 // @param departureTime - the departure time of the trip
@@ -252,7 +252,7 @@ func getLocalTime(dateString string, timezoneName string, ts int64) time.Time {
 // zero index
 // @returns a timestamp with same time of day as departureTime but the day
 // is the next repeating day
-func getNextRepeatTime(lastNotification int64, departureTime time.Time, repeatDays []bool) int64 {
+func getNextRepeatTime(lastNotification int64, departureTime time.Time, repeatDays []bool) time.Time {
 	// get the current time in the trip's timezone
 	now := time.Now().In(departureTime.Location())
 	// convert to correct timezone
@@ -270,7 +270,7 @@ func getNextRepeatTime(lastNotification int64, departureTime time.Time, repeatDa
 // @returns a timestamp with same time of day as departureTime but the day
 // is the next repeating day
 func getNextRepeatTimeFromDate(now time.Time, lastNotification time.Time,
-	departureTime time.Time, repeatDays []bool) int64 {
+	departureTime time.Time, repeatDays []bool) time.Time {
 	prevDay := mondayAsZeroIndex(int(lastNotification.Weekday()), len(repeatDays))
 	// find the next repeat
 	nextDay := getNextDay(prevDay, repeatDays)
@@ -284,7 +284,7 @@ func getNextRepeatTimeFromDate(now time.Time, lastNotification time.Time,
 		departureTime.Minute(), departureTime.Second(),
 		departureTime.Nanosecond(), departureTime.Location(),
 	)
-	return dateWithMatchingTime.Unix() * 1000
+	return dateWithMatchingTime
 }
 
 func mondayAsZeroIndex(day int, daysInAWeek int) int {

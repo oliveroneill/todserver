@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 // TodServer is used for sharing a RouteFinder between requests
@@ -142,7 +143,7 @@ func (s *TodServer) getRoutesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	routeName := params.Get("route_name")
 	routes := s.finder.FindRoutes(originLat, originLng, destLat,
-		destLng, transportType, arrivalTime,
+		destLng, transportType, time.Unix(0, arrivalTime*1e6),
 		routeName)
 	json.NewEncoder(w).Encode(routes)
 }

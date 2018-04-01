@@ -12,8 +12,8 @@ func TestGetNextRepeatTime(t *testing.T) {
 	departureTime := time.Unix(sundayDate.Unix()+200, 0).In(sundayDate.Location())
 	repeatDays := []bool{false, false, false, false, false, false, false}
 	result := getNextRepeatTimeFromDate(now, sundayDate, departureTime, repeatDays)
-	expected := departureTime.Unix() * 1000
-	if result != expected {
+	expected := departureTime
+	if !result.Equal(expected) {
 		t.Error("Expected", result, "to equal", expected)
 	}
 }
@@ -38,8 +38,8 @@ func TestGetNextRepeatTimeRepeatingTomorrow(t *testing.T) {
 		sundayDate.Minute(), sundayDate.Second(),
 		sundayDate.Nanosecond(), sundayDate.Location(),
 	)
-	expected := dateWithMatchingTime.Unix() * 1000
-	if result != expected {
+	expected := dateWithMatchingTime
+	if !result.Equal(expected) {
 		t.Error("Expected", result, "to equal", expected)
 	}
 }
@@ -68,8 +68,8 @@ func TestGetNextRepeatTimeRepeatingNextWeek(t *testing.T) {
 		sundayDate.Minute(), sundayDate.Second(),
 		sundayDate.Nanosecond(), sundayDate.Location(),
 	)
-	expected := dateWithMatchingTime.Unix() * 1000
-	if result != expected {
+	expected := dateWithMatchingTime
+	if !result.Equal(expected) {
 		t.Error("Expected", result, "to equal", expected)
 	}
 }
@@ -101,8 +101,8 @@ func TestGetNextRepeatTimeOverDaylightSavings(t *testing.T) {
 		saturdayDate.Minute(), saturdayDate.Second(),
 		saturdayDate.Nanosecond(), locWithoutDaylightSavings,
 	)
-	expected := dateWithMatchingTime.Unix() * 1000
-	if result != expected {
+	expected := dateWithMatchingTime
+	if !result.Equal(expected) {
 		t.Error("Expected", result, "to equal", expected)
 	}
 }
@@ -141,7 +141,7 @@ func TestOriginalAlertSentReturnsTrue(t *testing.T) {
 	var departureTimestamp int64 = 1500101524000
 	trip := &TripSchedule{
 		Route: &RouteOption{
-			DepartureTime: departureTimestamp,
+			DepartureTime: time.Unix(0, departureTimestamp*1e6),
 		},
 		LastNotificationSent: lastNotification,
 	}
@@ -156,7 +156,7 @@ func TestOriginalAlertSentReturnsFalse(t *testing.T) {
 	var departureTimestamp int64 = 1500102524000
 	trip := &TripSchedule{
 		Route: &RouteOption{
-			DepartureTime: departureTimestamp,
+			DepartureTime: time.Unix(0, departureTimestamp*1e6),
 		},
 		LastNotificationSent: lastNotification,
 	}
@@ -172,22 +172,22 @@ func TestGetRouteFromDescription(t *testing.T) {
 	trip := &TripSchedule{
 		Route: &RouteOption{
 			Description: description,
-			ArrivalTime: arrival,
+			ArrivalTime: time.Unix(0, arrival*1e6),
 		},
 		RepeatDays: []bool{false, false, false, false, false, false, false},
 	}
 	expected := RouteOption{
 		Description: description,
-		ArrivalTime: arrival - 100,
+		ArrivalTime: time.Unix(0, (arrival-100)*1e6),
 	}
 	routes := []RouteOption{
 		RouteOption{
 			Description: "Test description",
-			ArrivalTime: arrival,
+			ArrivalTime: time.Unix(0, arrival*1e6),
 		},
 		RouteOption{
 			Description: description,
-			ArrivalTime: arrival - 1000,
+			ArrivalTime: time.Unix(0, (arrival-1000)*1e6),
 		},
 		expected,
 	}
@@ -204,22 +204,22 @@ func TestGetRouteFromDescriptionWithoutMatching(t *testing.T) {
 	trip := &TripSchedule{
 		Route: &RouteOption{
 			Description: description,
-			ArrivalTime: arrival,
+			ArrivalTime: time.Unix(0, arrival*1e6),
 		},
 		RepeatDays: []bool{false, false, false, false, false, false, false},
 	}
 	expected := RouteOption{
 		Description: "Test description1",
-		ArrivalTime: arrival - 100,
+		ArrivalTime: time.Unix(0, (arrival-100)*1e6),
 	}
 	routes := []RouteOption{
 		RouteOption{
 			Description: "Test description2",
-			ArrivalTime: arrival + 500,
+			ArrivalTime: time.Unix(0, (arrival+500)*1e6),
 		},
 		RouteOption{
 			Description: "Test description3",
-			ArrivalTime: arrival - 1000,
+			ArrivalTime: time.Unix(0, (arrival-1000)*1e6),
 		},
 		expected,
 	}
@@ -236,7 +236,7 @@ func TestGetRouteFromDescriptionWithNoRoutes(t *testing.T) {
 	trip := &TripSchedule{
 		Route: &RouteOption{
 			Description: description,
-			ArrivalTime: arrival,
+			ArrivalTime: time.Unix(0, arrival*1e6),
 		},
 		RepeatDays: []bool{false, false, false, false, false, false, false},
 	}
@@ -253,8 +253,8 @@ func TestGetRouteFromDescriptionOnRepeatTrip(t *testing.T) {
 	trip := &TripSchedule{
 		Route: &RouteOption{
 			Description:   description,
-			ArrivalTime:   arrival,
-			DepartureTime: arrival - 10,
+			ArrivalTime:   time.Unix(0, arrival*1e6),
+			DepartureTime: time.Unix(0, (arrival-10)*1e6),
 		},
 		LastNotificationSent: arrival + 10,
 		InputArrivalTime: &Date{
@@ -266,16 +266,16 @@ func TestGetRouteFromDescriptionOnRepeatTrip(t *testing.T) {
 	// 24 hours from arrival
 	expected := RouteOption{
 		Description: description,
-		ArrivalTime: arrival + 60*60*24*1000,
+		ArrivalTime: time.Unix(0, (arrival+60*60*24*1000)*1e6),
 	}
 	routes := []RouteOption{
 		RouteOption{
 			Description: description,
-			ArrivalTime: arrival - 100,
+			ArrivalTime: time.Unix(0, (arrival-100)*1e6),
 		},
 		RouteOption{
 			Description: "Test description",
-			ArrivalTime: arrival,
+			ArrivalTime: time.Unix(0, arrival*1e6),
 		},
 		expected,
 	}

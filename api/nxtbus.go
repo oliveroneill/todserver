@@ -6,15 +6,15 @@ import (
 	"time"
 )
 
-// NxtBusThresholdMs is used so that NXTBUS will track 90 minutes ahead
-const NxtBusThresholdMs = 90 * 60 * 1000
+// NxtBusThreshold is used so that NXTBUS will track 90 minutes ahead
+const NxtBusThreshold = 90 * time.Minute
 
 // TransportCanberraName is the name stored in NXTBUS API response
 const TransportCanberraName = "Transport Canberra"
 
 // StopTimeThreshold is a threshold to determine whether a stop date from
 // Google Maps is close enough to the NXTBUS date to be the same route
-const StopTimeThresholdMs = 2 * 60 * 1000
+const StopTimeThreshold = 2 * time.Minute
 
 // NxtBusFinder - an implementation of RouteFinder that uses GoogleMaps
 // and NXTBUS for accurate departure times in Canberra
@@ -78,16 +78,16 @@ func (api *NxtBusAPI) GetVisits(stopName string) ([]nxtbus.MonitoredStopVisit, e
 // FindRoutes will return real-time transit data and fallback to standard
 // Google Maps data when this data is unavailable or irrelevant
 func (finder *NxtBusFinder) FindRoutes(originLat, originLng, destLat,
-	destLng float64, transportType string, arrivalTime int64,
+	destLng float64, transportType string, arrivalTime time.Time,
 	routeName string) []RouteOption {
 	options := finder.finder.FindRoutes(originLat, originLng, destLat, destLng, transportType, arrivalTime, routeName)
 	if transportType != "transit" {
 		return options
 	}
 	for i, option := range options {
-		now := time.Now().UnixNano() / 1e6
+		now := time.Now()
 		// if its more than 90 minutes then skip
-		if option.DepartureTime-now >= NxtBusThresholdMs {
+		if option.DepartureTime.Sub(now) >= NxtBusThreshold {
 			continue
 		}
 		if option.transitDetails == nil {
@@ -111,7 +111,7 @@ func (finder *NxtBusFinder) updateUsingRealTimeData(option *RouteOption) {
 	}
 	// use the transit details departure time, since there may be other legs
 	// on the trip
-	mapsDeparture := int64(option.transitDetails.DepartureTime.UnixNano() / 1e6)
+	mapsDeparture := option.transitDetails.DepartureTime
 	var closest float64 = -1
 	var bestChoice *nxtbus.MonitoredStopVisit
 	// find MonitoredStopVisit with closest scheduled departure to option's departure time
@@ -124,10 +124,10 @@ func (finder *NxtBusFinder) updateUsingRealTimeData(option *RouteOption) {
 		if err != nil {
 			continue
 		}
-		aimedDeparture := int64(date.UnixNano() / 1e6)
-		diff := math.Abs(float64(mapsDeparture - aimedDeparture))
+		aimedDeparture := date
+		diff := math.Abs(float64(mapsDeparture.Sub(aimedDeparture)))
 		// make sure the times aren't too far apart
-		if diff > StopTimeThresholdMs {
+		if time.Duration(diff) > StopTimeThreshold {
 			continue
 		}
 		if bestChoice == nil || diff < closest {
@@ -146,8 +146,8 @@ func (finder *NxtBusFinder) updateUsingRealTimeData(option *RouteOption) {
 	// Figure out how much time we've gained or lost compared to the schedule.
 	// We use the Google Maps departure time to compensate if it has
 	// an incorrect transit departure time
-	diff := mapsDeparture - (expectedDeparture.UnixNano() / 1e6)
+	diff := mapsDeparture.Sub(expectedDeparture)
 	// move the trip start and end accordingly
-	option.DepartureTime -= diff
-	option.ArrivalTime -= diff
+	option.DepartureTime = option.DepartureTime.Add(-diff)
+	option.ArrivalTime = option.ArrivalTime.Add(-diff)
 }

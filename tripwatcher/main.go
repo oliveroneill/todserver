@@ -20,7 +20,7 @@ const Android = "android"
 const dbCheckFrequency = 1 * time.Minute
 
 // allow an extra 30 seconds for safety
-const waitingWindowThreshold = 30 * 1000
+const waitingWindowThreshold = 30 * time.Millisecond
 
 // gorush configuration file
 const configFile = "config.yml"
@@ -152,35 +152,36 @@ func watchTrips(trips []*api.TripSchedule, finder api.RouteFinder, watchList map
 	}
 }
 
-func roundToNextInterval(milliseconds int64) int64 {
-	if milliseconds > 60*60*1000 {
+func roundToNextInterval(timeLeft time.Duration) time.Duration {
+	if timeLeft > 1*time.Hour {
 		// wait until an hour before starting checks
-		return milliseconds - 60*60*1000
+		return timeLeft - 1*time.Hour
 	}
 	// quarter the minutes remaining each time
-	minuteAsFloat := (float64(milliseconds) / (1000.0 * 60.0)) / 4.0
+	minuteAsFloat := float64(timeLeft/time.Minute) / 4.0
 	// if it's very close then we return
 	if minuteAsFloat < 0.25 {
-		return milliseconds
+		return timeLeft
 	}
 	// add an extra minute so that we don't return zero and continue
 	// returning intervals when milliseconds is small
 	rounded := int64(minuteAsFloat + 1)
-	return rounded * 60 * 1000
+	return time.Duration(rounded) * time.Minute
 }
 
 // watchTrip will watch the trip using the specified generator to generate
 // new routes and will return the latest route when it's reached notification
 // time
 func watchTrip(trip *api.TripSchedule, generator RouteGenerator) *api.RouteOption {
-	now := getCurrentMillis()
+	now := time.Now()
 	// add some extra time to the waiting window since push notification won't be instant
-	safetyBuffer := trip.WaitingWindowMs + waitingWindowThreshold
+	waitingWindow := time.Duration(trip.WaitingWindowMs) * time.Millisecond
+	safetyBuffer := waitingWindow + waitingWindowThreshold
 	// get next departure time
 	departureTime := api.GetDepartureTime(trip)
-	notificationTime := departureTime - safetyBuffer
+	notificationTime := departureTime.Add(-safetyBuffer)
 	// time until notification should be sent
-	timeout := notificationTime - now
+	timeout := notificationTime.Sub(now)
 	// create a new route with current dates as opposed to the stored ones
 	// from the original schedule
 	// this variable will keep track of the last valid route for this trip
@@ -196,41 +197,37 @@ func watchTrip(trip *api.TripSchedule, generator RouteGenerator) *api.RouteOptio
 			}
 			// store this route
 			prevRoute = route
-			now = getCurrentMillis()
+			now = time.Now()
 			// calculate next notification time
-			notificationTime = route.DepartureTime - safetyBuffer
-			timeLeft := notificationTime - now
+			notificationTime = route.DepartureTime.Add(-safetyBuffer)
+			timeLeft := notificationTime.Sub(now)
 			if timeLeft <= 0 {
 				return prevRoute
 			}
 			// get the next time that we should re-check the route
 			nextCheck := roundToNextInterval(timeLeft)
 			// ensure that we don't overshoot the notification time
-			if now+nextCheck > notificationTime {
-				nextCheck = now - notificationTime
+			if now.Add(nextCheck).After(notificationTime) {
+				nextCheck = now.Sub(notificationTime)
 			}
 			// sleep until next check
-			time.Sleep(time.Duration(nextCheck) * time.Millisecond)
+			time.Sleep(nextCheck)
 			// if we've reached or passed the notification time then we're done
-			if getCurrentMillis() >= notificationTime {
+			if time.Now().UnixNano() >= notificationTime.UnixNano() {
 				return prevRoute
 			}
 			// update the timeout so that we don't miss the notification
 			// time while waiting for a response
-			now = getCurrentMillis()
-			timeout = notificationTime - now
-		case <-time.After(time.Duration(timeout) * time.Millisecond):
+			now = time.Now()
+			timeout = notificationTime.Sub(now)
+		case <-time.After(timeout):
 			// check whether we should have finished by now
-			now = getCurrentMillis()
-			if notificationTime-now <= 0 {
+			now = time.Now()
+			if notificationTime.Sub(now) <= 0 {
 				return prevRoute
 			}
 		}
 	}
-}
-
-func getCurrentMillis() int64 {
-	return time.Now().UnixNano() / 1e6
 }
 
 // GenerateRoute will send a route back over the returned channel.
@@ -259,38 +256,35 @@ func (g *DefaultRouteGenerator) GenerateRoute(trip *api.TripSchedule) <-chan *ap
 
 func tripHasPast(trip *api.TripSchedule) bool {
 	// check whether it's safe to delete a disabled trip
-	now := getCurrentMillis()
+	now := time.Now()
 	// if it's been two hours since the trip then it should be safe
-	var twoHours int64 = 2 * 60 * 60 * 1000
-	return now-trip.Route.ArrivalTime > twoHours
+	twoHours := 2 * time.Hour
+	return now.Sub(trip.Route.ArrivalTime) > twoHours
 }
 
 // updateRouteDates returns a new RouteOption that has updated dates based on
 // the input timestamp, so that all dates share the same day
-func updateRouteDates(route *api.RouteOption, departureTime int64) *api.RouteOption {
-	routeDeparture := time.Unix(route.DepartureTime/1000, 0)
-	routeArrival := time.Unix(route.ArrivalTime/1000, 0)
-	newDeparture := time.Unix(departureTime/1000, 0)
-	if routeDeparture == newDeparture {
+func updateRouteDates(route *api.RouteOption, departureTime time.Time) *api.RouteOption {
+	if route.DepartureTime.Equal(departureTime) {
 		return route
 	}
 	// create new dates based on new departure time where the time of
 	// day is left intact
 	departure := time.Date(
-		newDeparture.Year(), newDeparture.Month(), newDeparture.Day(),
-		routeDeparture.Hour(),
-		routeDeparture.Minute(), routeDeparture.Second(),
-		routeDeparture.Nanosecond(), newDeparture.Location(),
+		departureTime.Year(), departureTime.Month(), departureTime.Day(),
+		route.DepartureTime.Hour(),
+		route.DepartureTime.Minute(), route.DepartureTime.Second(),
+		route.DepartureTime.Nanosecond(), departureTime.Location(),
 	)
 	arrival := time.Date(
-		newDeparture.Year(), newDeparture.Month(), newDeparture.Day(),
-		routeArrival.Hour(),
-		routeArrival.Minute(), routeArrival.Second(),
-		routeArrival.Nanosecond(), newDeparture.Location(),
+		departureTime.Year(), departureTime.Month(), departureTime.Day(),
+		route.ArrivalTime.Hour(),
+		route.ArrivalTime.Minute(), route.ArrivalTime.Second(),
+		route.ArrivalTime.Nanosecond(), departureTime.Location(),
 	)
 	newRoute := &api.RouteOption{
-		DepartureTime: departure.Unix() * 1000,
-		ArrivalTime:   arrival.Unix() * 1000,
+		DepartureTime: departure,
+		ArrivalTime:   arrival,
 		Name:          route.Name,
 		Description:   route.Description,
 	}
