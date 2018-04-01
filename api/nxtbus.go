@@ -119,9 +119,9 @@ func (finder *NxtBusFinder) updateUsingRealTimeData(option *RouteOption) {
 		if data.LineName != option.Name {
 			continue
 		}
-		date := nxtbus.ParseDate(data.AimedDepartureTime)
+		date, err := nxtbus.ParseDate(data.AimedDepartureTime)
 		// some responses seem to be missing data
-		if date == nil {
+		if err != nil {
 			continue
 		}
 		aimedDeparture := int64(date.UnixNano() / 1e6)
@@ -138,9 +138,9 @@ func (finder *NxtBusFinder) updateUsingRealTimeData(option *RouteOption) {
 	if bestChoice == nil {
 		return
 	}
-	expectedDeparture := nxtbus.ParseDate(bestChoice.ExpectedDepartureTime)
+	expectedDeparture, err := nxtbus.ParseDate(bestChoice.ExpectedDepartureTime)
 	// ensure we aren't missing data
-	if expectedDeparture == nil {
+	if err != nil {
 		return
 	}
 	// Figure out how much time we've gained or lost compared to the schedule.
