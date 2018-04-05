@@ -111,7 +111,7 @@ func TestWatchTripTimesOut(t *testing.T) {
 
 func TestUpdateRouteDates(t *testing.T) {
 	// Ensure that it updates days
-	departure := time.Unix(0, 1500101524000*1e6)
+	departure := api.UnixTimestampToTime(1500101524000)
 	arrival := departure.Add(1 * time.Minute)
 	originalRoute := &api.RouteOption{
 		Description:   "Original description",

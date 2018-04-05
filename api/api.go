@@ -181,7 +181,7 @@ func IsRepeating(trip *TripSchedule) bool {
 // If this is a repeating trip then the departure time will be updated to the
 // next repeating day
 func GetDepartureTime(trip *TripSchedule) time.Time {
-	return getNextTime(trip, trip.Route.DepartureTime.UnixNano()/1e6)
+	return getNextTime(trip, TimeToUnixTimestamp(trip.Route.DepartureTime))
 }
 
 // GetInputArrivalTime will return the arrival time that the user input for the
@@ -197,7 +197,7 @@ func GetInputArrivalTime(trip *TripSchedule) time.Time {
 // If this is a repeating trip then the arrival time will be updated to the
 // next repeating day
 func GetArrivalTime(trip *TripSchedule) time.Time {
-	return getNextTime(trip, trip.Route.ArrivalTime.UnixNano()/1e6)
+	return getNextTime(trip, TimeToUnixTimestamp(trip.Route.ArrivalTime))
 }
 
 // getNextTime will return an updated timestamp using the repeated
@@ -219,7 +219,7 @@ func getNextTime(trip *TripSchedule, ts int64) time.Time {
 			localArrival,
 			trip.RepeatDays)
 	}
-	return time.Unix(0, ts*1e6)
+	return UnixTimestampToTime(ts)
 }
 
 func wasOriginalAlertSent(trip *TripSchedule) bool {

@@ -8,23 +8,39 @@ import (
 	"time"
 )
 
+// NanosecondsInAMillisecond is used for conversion
+const NanosecondsInAMillisecond = 1e6
+
 // UnixTime is a wrapper around time.Time for the purpose of
 // encoding and decoding JSON into unix timestamp in milliseconds
 type UnixTime struct {
 	time.Time
 }
 
+// UnixTimestampToTime converts a unix timestamp in milliseconds to a
+// time.Time value
+func UnixTimestampToTime(ts int64) time.Time {
+	return time.Unix(0, ts*NanosecondsInAMillisecond)
+}
+
+// TimeToUnixTimestamp converts a UnixTime value to a unix timestamp
+// in milliseconds. UnixTime is used as input simply because it was
+// needed more often than generic time
+func TimeToUnixTimestamp(t UnixTime) int64 {
+	return t.UnixNano() / NanosecondsInAMillisecond
+}
+
 // UnmarshalJSON will convert unix timestamp string to time.Time
 func (t *UnixTime) UnmarshalJSON(b []byte) (err error) {
 	s := strings.Trim(string(b), "\"")
 	i, err := strconv.ParseInt(s, 10, 64)
-	t.Time = time.Unix(0, i*1e6)
+	t.Time = UnixTimestampToTime(i)
 	return err
 }
 
 // MarshalJSON will convert time.Time to unix timestamp string
 func (t *UnixTime) MarshalJSON() ([]byte, error) {
-	ts := t.UnixNano() / 1e6
+	ts := TimeToUnixTimestamp(*t)
 	return []byte(fmt.Sprintf("%d", ts)), nil
 }
 
