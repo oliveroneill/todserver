@@ -8,10 +8,13 @@ import (
 	"time"
 )
 
+// UnixTime is a wrapper around time.Time for the purpose of
+// encoding and decoding JSON into unix timestamp in milliseconds
 type UnixTime struct {
 	time.Time
 }
 
+// UnmarshalJSON will convert unix timestamp string to time.Time
 func (t *UnixTime) UnmarshalJSON(b []byte) (err error) {
 	s := strings.Trim(string(b), "\"")
 	i, err := strconv.ParseInt(s, 10, 64)
@@ -19,6 +22,7 @@ func (t *UnixTime) UnmarshalJSON(b []byte) (err error) {
 	return err
 }
 
+// MarshalJSON will convert time.Time to unix timestamp string
 func (t *UnixTime) MarshalJSON() ([]byte, error) {
 	ts := t.UnixNano() / 1e6
 	return []byte(fmt.Sprintf("%d", ts)), nil
