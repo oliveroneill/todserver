@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/lib/pq"
 	"log"
+	"time"
 )
 
 // DaysAWeek is the number of days in a week
@@ -40,7 +41,8 @@ func (db *PostgresInterface) ScheduleTrip(trip *TripSchedule) error {
 		trip.Origin.Lat, trip.Origin.Lng,
 		trip.Destination.Lat, trip.Destination.Lng,
 		trip.InputArrivalTime.Timestamp, trip.InputArrivalTime.String,
-		trip.Route.ArrivalTime, trip.Route.DepartureTime,
+		trip.Route.ArrivalTime.UnixNano() / 1e6,
+		trip.Route.DepartureTime.UnixNano() / 1e6,
 		trip.WaitingWindowMs, trip.TransportType,
 		trip.Route.Name, pq.Array(trip.RepeatDays),
 		trip.Enabled, trip.LastNotificationSent, trip.InputArrivalTime.TimezoneLocation)
@@ -83,12 +85,14 @@ func (db *PostgresInterface) GetTrips(userID string) ([]TripSchedule, error) {
 		t.InputArrivalTime = &Date{}
 		var origin string
 		var dest string
+		var departureTime int64
+		var arrivalTime int64
 		err = rows.Scan(&t.ID, &t.User.ID, &t.User.NotificationToken, &t.User.DeviceOS,
 			&t.Route.Description,
 			&origin, &dest,
 			&t.InputArrivalTime.Timestamp, &t.InputArrivalTime.String,
-			&t.Route.ArrivalTime,
-			&t.Route.DepartureTime, &t.WaitingWindowMs,
+			&arrivalTime,
+			&departureTime, &t.WaitingWindowMs,
 			&t.TransportType, &t.Route.Name,
 			pq.Array(&t.RepeatDays), &t.Enabled, &t.LastNotificationSent,
 			&t.InputArrivalTime.TimezoneLocation)
@@ -103,6 +107,8 @@ func (db *PostgresInterface) GetTrips(userID string) ([]TripSchedule, error) {
 		if err != nil {
 			continue
 		}
+		t.Route.DepartureTime = UnixTime{time.Unix(0, departureTime * 1e6)}
+		t.Route.ArrivalTime = UnixTime{time.Unix(0, arrivalTime * 1e6)}
 		trips = append(trips, t)
 	}
 	return trips, nil
@@ -176,12 +182,14 @@ func (db *PostgresInterface) GetAllScheduledTrips() ([]*TripSchedule, error) {
 		t.InputArrivalTime = &Date{}
 		var origin string
 		var dest string
+		var departureTime int64
+		var arrivalTime int64
 		err = rows.Scan(&t.ID, &t.User.ID, &t.User.NotificationToken, &t.User.DeviceOS,
 			&t.Route.Description,
 			&origin, &dest,
 			&t.InputArrivalTime.Timestamp, &t.InputArrivalTime.String,
-			&t.Route.ArrivalTime,
-			&t.Route.DepartureTime, &t.WaitingWindowMs,
+			&arrivalTime,
+			&departureTime, &t.WaitingWindowMs,
 			&t.TransportType, &t.Route.Name,
 			pq.Array(&t.RepeatDays), &t.Enabled, &t.LastNotificationSent,
 			&t.InputArrivalTime.TimezoneLocation)
@@ -199,6 +207,8 @@ func (db *PostgresInterface) GetAllScheduledTrips() ([]*TripSchedule, error) {
 			fmt.Println(err)
 			continue
 		}
+		t.Route.DepartureTime = UnixTime{time.Unix(0, departureTime * 1e6)}
+		t.Route.ArrivalTime = UnixTime{time.Unix(0, arrivalTime * 1e6)}
 		trips = append(trips, &t)
 	}
 	return trips, nil
