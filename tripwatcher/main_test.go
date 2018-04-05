@@ -70,13 +70,13 @@ func TestWatchTrip(t *testing.T) {
 	trip := &api.TripSchedule{
 		Route: &api.RouteOption{
 			Description:   "Original description",
-			DepartureTime: now.Add(2 * time.Hour),
+			DepartureTime: api.UnixTime{now.Add(2 * time.Hour)},
 		},
 		RepeatDays: []bool{false, false, false, false, false, false, false},
 	}
 	route := &api.RouteOption{
 		Description:   "Test description",
-		DepartureTime: now,
+		DepartureTime: api.UnixTime{now},
 	}
 	result := watchTrip(trip, NewMockGenerator(route, 0))
 	if result != route {
@@ -91,7 +91,7 @@ func TestWatchTripTimesOut(t *testing.T) {
 		Description: "Original description",
 		// Truncate to millisecond level since the API will retrieve trips
 		// without nanosecond precision
-		DepartureTime: originalDepartureTime.Truncate(time.Millisecond),
+		DepartureTime: api.UnixTime{originalDepartureTime.Truncate(time.Millisecond)},
 	}
 	trip := &api.TripSchedule{
 		Route:      originalRoute,
@@ -99,7 +99,7 @@ func TestWatchTripTimesOut(t *testing.T) {
 	}
 	route := &api.RouteOption{
 		Description:   "Test description",
-		DepartureTime: now,
+		DepartureTime: api.UnixTime{now},
 	}
 	// The route will be returned after 200ms but the watcher will timeout
 	// at 100ms
@@ -115,8 +115,8 @@ func TestUpdateRouteDates(t *testing.T) {
 	arrival := departure.Add(1 * time.Minute)
 	originalRoute := &api.RouteOption{
 		Description:   "Original description",
-		DepartureTime: departure,
-		ArrivalTime:   arrival,
+		DepartureTime: api.UnixTime{departure},
+		ArrivalTime:   api.UnixTime{arrival},
 	}
 	// over a year in the future
 	newDeparture := departure.Add(500 * 24 * time.Hour)

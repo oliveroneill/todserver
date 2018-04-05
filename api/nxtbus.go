@@ -148,6 +148,6 @@ func (finder *NxtBusFinder) updateUsingRealTimeData(option *RouteOption) {
 	// an incorrect transit departure time
 	diff := mapsDeparture.Sub(expectedDeparture)
 	// move the trip start and end accordingly
-	option.DepartureTime = option.DepartureTime.Add(-diff)
-	option.ArrivalTime = option.ArrivalTime.Add(-diff)
+	option.DepartureTime = UnixTime{option.DepartureTime.Add(-diff)}
+	option.ArrivalTime = UnixTime{option.ArrivalTime.Add(-diff)}
 }

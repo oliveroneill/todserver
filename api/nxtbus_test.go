@@ -103,8 +103,8 @@ func TestFindRoutesRealTimeThreshold(t *testing.T) {
 	arrival := now.Add(100 * time.Minute)
 	departure := now.Add(100 * time.Minute)
 	route := RouteOption{
-		DepartureTime:  departure,
-		ArrivalTime:    arrival,
+		DepartureTime:  UnixTime{departure},
+		ArrivalTime:    UnixTime{arrival},
 		Name:           "",
 		Description:    "",
 		transitDetails: generateValidTransitDetails(departure),
@@ -134,8 +134,8 @@ func TestFindRoutesUsesRealTimeData(t *testing.T) {
 	departure := now.Add(10 * time.Minute)
 	details := generateValidTransitDetails(departure)
 	route := RouteOption{
-		DepartureTime:  departure,
-		ArrivalTime:    scheduledArrival,
+		DepartureTime:  UnixTime{departure},
+		ArrivalTime:    UnixTime{scheduledArrival},
 		Name:           name,
 		Description:    "",
 		transitDetails: details,
@@ -150,8 +150,8 @@ func TestFindRoutesUsesRealTimeData(t *testing.T) {
 	// Expected route option after real time update
 	arrival := scheduledArrival.Add(-(departure.Sub(realTimeDeparture)))
 	expected := RouteOption{
-		DepartureTime:  realTimeDeparture.Truncate(time.Second),
-		ArrivalTime:    arrival.Truncate(time.Second),
+		DepartureTime:  UnixTime{realTimeDeparture.Truncate(time.Second)},
+		ArrivalTime:    UnixTime{arrival.Truncate(time.Second)},
 		Name:           name,
 		Description:    "",
 		transitDetails: details,
@@ -177,8 +177,8 @@ func TestFindRoutesFallsBackWhenMissingStopInfo(t *testing.T) {
 	scheduledArrival := now.Add(11 * time.Minute)
 	departure := now.Add(10 * time.Minute)
 	route := RouteOption{
-		DepartureTime:  departure,
-		ArrivalTime:    scheduledArrival,
+		DepartureTime:  UnixTime{departure},
+		ArrivalTime:    UnixTime{scheduledArrival},
 		Name:           name,
 		Description:    "",
 		transitDetails: generateValidTransitDetails(departure),
@@ -204,8 +204,8 @@ func TestFindRoutesFallsBackWhenMissingExpectedDates(t *testing.T) {
 	scheduledArrival := now.Add(11 * time.Minute)
 	departure := now.Add(10 * time.Minute)
 	route := RouteOption{
-		DepartureTime:  departure,
-		ArrivalTime:    scheduledArrival,
+		DepartureTime:  UnixTime{departure},
+		ArrivalTime:    UnixTime{scheduledArrival},
 		Name:           name,
 		Description:    "",
 		transitDetails: generateValidTransitDetails(departure),
@@ -239,8 +239,8 @@ func TestFindRoutesFallsBackWhenDifferentBusCompany(t *testing.T) {
 	scheduledArrival := now.Add(11 * time.Minute)
 	departure := now.Add(10 * time.Minute)
 	route := RouteOption{
-		DepartureTime: departure,
-		ArrivalTime:   scheduledArrival,
+		DepartureTime: UnixTime{departure},
+		ArrivalTime:   UnixTime{scheduledArrival},
 		Name:          name,
 		Description:   "",
 		// invalid details
@@ -270,8 +270,8 @@ func TestFindRoutesFallsBackWhenNotTransit(t *testing.T) {
 	scheduledArrival := now.Add(11 * time.Minute)
 	departure := now.Add(10 * time.Minute)
 	route := RouteOption{
-		DepartureTime:  departure,
-		ArrivalTime:    scheduledArrival,
+		DepartureTime:  UnixTime{departure},
+		ArrivalTime:    UnixTime{scheduledArrival},
 		Name:           name,
 		Description:    "",
 		transitDetails: generateValidTransitDetails(departure),
@@ -301,8 +301,8 @@ func TestFindRoutesFallsBackWhenOutOfThreshold(t *testing.T) {
 	scheduledArrival := now.Add(11 * time.Minute)
 	departure := now.Add(10 * time.Minute)
 	route := RouteOption{
-		DepartureTime:  departure,
-		ArrivalTime:    scheduledArrival,
+		DepartureTime:  UnixTime{departure},
+		ArrivalTime:    UnixTime{scheduledArrival},
 		Name:           name,
 		Description:    "",
 		transitDetails: generateValidTransitDetails(departure),

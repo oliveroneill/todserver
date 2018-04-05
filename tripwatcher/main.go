@@ -259,7 +259,7 @@ func tripHasPast(trip *api.TripSchedule) bool {
 	now := time.Now()
 	// if it's been two hours since the trip then it should be safe
 	twoHours := 2 * time.Hour
-	return now.Sub(trip.Route.ArrivalTime) > twoHours
+	return now.Sub(trip.Route.ArrivalTime.Time) > twoHours
 }
 
 // updateRouteDates returns a new RouteOption that has updated dates based on
@@ -283,8 +283,8 @@ func updateRouteDates(route *api.RouteOption, departureTime time.Time) *api.Rout
 		route.ArrivalTime.Nanosecond(), departureTime.Location(),
 	)
 	newRoute := &api.RouteOption{
-		DepartureTime: departure,
-		ArrivalTime:   arrival,
+		DepartureTime: api.UnixTime{departure},
+		ArrivalTime:   api.UnixTime{arrival},
 		Name:          route.Name,
 		Description:   route.Description,
 	}

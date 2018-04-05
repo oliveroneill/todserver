@@ -1,17 +1,36 @@
 package api
 
 import (
+	"fmt"
 	"googlemaps.github.io/maps"
+	"strconv"
+	"strings"
 	"time"
 )
+
+type UnixTime struct {
+	time.Time
+}
+
+func (t *UnixTime) UnmarshalJSON(b []byte) (err error) {
+	s := strings.Trim(string(b), "\"")
+	i, err := strconv.ParseInt(s, 10, 64)
+	t.Time = time.Unix(0, i*1e6)
+	return err
+}
+
+func (t *UnixTime) MarshalJSON() ([]byte, error) {
+	ts := t.UnixNano() / 1e6
+	return []byte(fmt.Sprintf("%d", ts)), nil
+}
 
 // RouteOption is a search result found through RouteFinder
 // This is information useful for the user to determine their trip
 type RouteOption struct {
-	DepartureTime time.Time `json:"departure_time"`
-	ArrivalTime   time.Time `json:"arrival_time"`
-	Name          string    `json:"name"`
-	Description   string    `json:"description"`
+	DepartureTime UnixTime `json:"departure_time"`
+	ArrivalTime   UnixTime `json:"arrival_time"`
+	Name          string   `json:"name"`
+	Description   string   `json:"description"`
 	// optional transit information
 	// This will only be set by GoogleMapsFinder
 	transitDetails *maps.TransitDetails
@@ -36,8 +55,8 @@ func NewRouteOption(departureTime time.Time, arrivalTime time.Time, routeName st
 		description = routeName
 	}
 	return RouteOption{
-		DepartureTime: departureTime,
-		ArrivalTime:   arrivalTime,
+		DepartureTime: UnixTime{departureTime},
+		ArrivalTime:   UnixTime{arrivalTime},
 		Name:          routeName,
 		Description:   description,
 	}

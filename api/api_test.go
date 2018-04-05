@@ -141,7 +141,7 @@ func TestOriginalAlertSentReturnsTrue(t *testing.T) {
 	var departureTimestamp int64 = 1500101524000
 	trip := &TripSchedule{
 		Route: &RouteOption{
-			DepartureTime: time.Unix(0, departureTimestamp*1e6),
+			DepartureTime: UnixTime{time.Unix(0, departureTimestamp*1e6)},
 		},
 		LastNotificationSent: lastNotification,
 	}
@@ -156,7 +156,7 @@ func TestOriginalAlertSentReturnsFalse(t *testing.T) {
 	var departureTimestamp int64 = 1500102524000
 	trip := &TripSchedule{
 		Route: &RouteOption{
-			DepartureTime: time.Unix(0, departureTimestamp*1e6),
+			DepartureTime: UnixTime{time.Unix(0, departureTimestamp*1e6)},
 		},
 		LastNotificationSent: lastNotification,
 	}
@@ -172,22 +172,22 @@ func TestGetRouteFromDescription(t *testing.T) {
 	trip := &TripSchedule{
 		Route: &RouteOption{
 			Description: description,
-			ArrivalTime: time.Unix(0, arrival*1e6),
+			ArrivalTime: UnixTime{time.Unix(0, arrival*1e6)},
 		},
 		RepeatDays: []bool{false, false, false, false, false, false, false},
 	}
 	expected := RouteOption{
 		Description: description,
-		ArrivalTime: time.Unix(0, (arrival-100)*1e6),
+		ArrivalTime: UnixTime{time.Unix(0, (arrival-100)*1e6)},
 	}
 	routes := []RouteOption{
 		RouteOption{
 			Description: "Test description",
-			ArrivalTime: time.Unix(0, arrival*1e6),
+			ArrivalTime: UnixTime{time.Unix(0, arrival*1e6)},
 		},
 		RouteOption{
 			Description: description,
-			ArrivalTime: time.Unix(0, (arrival-1000)*1e6),
+			ArrivalTime: UnixTime{time.Unix(0, (arrival-1000)*1e6)},
 		},
 		expected,
 	}
@@ -204,22 +204,22 @@ func TestGetRouteFromDescriptionWithoutMatching(t *testing.T) {
 	trip := &TripSchedule{
 		Route: &RouteOption{
 			Description: description,
-			ArrivalTime: time.Unix(0, arrival*1e6),
+			ArrivalTime: UnixTime{time.Unix(0, arrival*1e6)},
 		},
 		RepeatDays: []bool{false, false, false, false, false, false, false},
 	}
 	expected := RouteOption{
 		Description: "Test description1",
-		ArrivalTime: time.Unix(0, (arrival-100)*1e6),
+		ArrivalTime: UnixTime{time.Unix(0, (arrival-100)*1e6)},
 	}
 	routes := []RouteOption{
 		RouteOption{
 			Description: "Test description2",
-			ArrivalTime: time.Unix(0, (arrival+500)*1e6),
+			ArrivalTime: UnixTime{time.Unix(0, (arrival+500)*1e6)},
 		},
 		RouteOption{
 			Description: "Test description3",
-			ArrivalTime: time.Unix(0, (arrival-1000)*1e6),
+			ArrivalTime: UnixTime{time.Unix(0, (arrival-1000)*1e6)},
 		},
 		expected,
 	}
@@ -236,7 +236,7 @@ func TestGetRouteFromDescriptionWithNoRoutes(t *testing.T) {
 	trip := &TripSchedule{
 		Route: &RouteOption{
 			Description: description,
-			ArrivalTime: time.Unix(0, arrival*1e6),
+			ArrivalTime: UnixTime{time.Unix(0, arrival*1e6)},
 		},
 		RepeatDays: []bool{false, false, false, false, false, false, false},
 	}
@@ -253,8 +253,8 @@ func TestGetRouteFromDescriptionOnRepeatTrip(t *testing.T) {
 	trip := &TripSchedule{
 		Route: &RouteOption{
 			Description:   description,
-			ArrivalTime:   time.Unix(0, arrival*1e6),
-			DepartureTime: time.Unix(0, (arrival-10)*1e6),
+			ArrivalTime:   UnixTime{time.Unix(0, arrival*1e6)},
+			DepartureTime: UnixTime{time.Unix(0, (arrival-10)*1e6)},
 		},
 		LastNotificationSent: arrival + 10,
 		InputArrivalTime: &Date{
@@ -266,16 +266,16 @@ func TestGetRouteFromDescriptionOnRepeatTrip(t *testing.T) {
 	// 24 hours from arrival
 	expected := RouteOption{
 		Description: description,
-		ArrivalTime: time.Unix(0, (arrival+60*60*24*1000)*1e6),
+		ArrivalTime: UnixTime{time.Unix(0, (arrival+60*60*24*1000)*1e6)},
 	}
 	routes := []RouteOption{
 		RouteOption{
 			Description: description,
-			ArrivalTime: time.Unix(0, (arrival-100)*1e6),
+			ArrivalTime: UnixTime{time.Unix(0, (arrival-100)*1e6)},
 		},
 		RouteOption{
 			Description: "Test description",
-			ArrivalTime: time.Unix(0, arrival*1e6),
+			ArrivalTime: UnixTime{time.Unix(0, arrival*1e6)},
 		},
 		expected,
 	}
