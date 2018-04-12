@@ -138,7 +138,7 @@ func (db *PostgresInterface) IsEnabled(trip *TripSchedule) bool {
 	return enabled
 }
 
-// EnableDisableTrip will switch the current setting of the trip
+// EnableDisableTrip will toggle the current setting of the trip
 // ie. enabled goes to disabled or disabled goes to enabled
 func (db *PostgresInterface) EnableDisableTrip(tripID string, userID string) error {
 	sqlStatement := `UPDATE trips SET enabled = NOT enabled WHERE id = $1 AND user_id = $2`

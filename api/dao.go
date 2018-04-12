@@ -11,7 +11,7 @@ type DatabaseInterface interface {
 	GetTrips(userID string) ([]TripSchedule, error)
     // SetLastNotificationTime will store the time of the last notification
 	SetLastNotificationTime(trip *TripSchedule, timestamp int64) error
-    // EnableDisableTrip will switch the current setting of the trip
+    // EnableDisableTrip will toggle the current setting of the trip
     // ie. enabled goes to disabled or disabled goes to enabled
 	EnableDisableTrip(tripID string, userID string) error
     // DeleteTrip will delete the specified trip
