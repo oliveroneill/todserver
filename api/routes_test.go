@@ -1,19 +1,19 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
-	"time"
-	"testing"
 	"reflect"
 	"strings"
-	"encoding/json"
+	"testing"
+	"time"
 )
 
 func TestRouteJSONDecoding(t *testing.T) {
 	var departureTimeUnix int64 = 1500101524000
-	departureTime := time.Unix(0, departureTimeUnix * 1e6)
+	departureTime := time.Unix(0, departureTimeUnix*1e6)
 	var arrivalTimeUnix int64 = 1500101584000
-	arrivalTime := time.Unix(0, arrivalTimeUnix * 1e6)
+	arrivalTime := time.Unix(0, arrivalTimeUnix*1e6)
 	routeName := "Example Route Name"
 	description := "Description of Route"
 	expected := NewRouteOption(departureTime, arrivalTime, routeName, description)
@@ -34,9 +34,9 @@ func TestRouteJSONDecoding(t *testing.T) {
 
 func TestRouteJSONEncoding(t *testing.T) {
 	var departureTimeUnix int64 = 1500101524000
-	departureTime := time.Unix(0, departureTimeUnix * 1e6)
+	departureTime := time.Unix(0, departureTimeUnix*1e6)
 	var arrivalTimeUnix int64 = 1500101584000
-	arrivalTime := time.Unix(0, arrivalTimeUnix * 1e6)
+	arrivalTime := time.Unix(0, arrivalTimeUnix*1e6)
 	routeName := "Example Route Name"
 	description := "Description of Route"
 	expected := fmt.Sprintf(
