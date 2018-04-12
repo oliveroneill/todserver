@@ -153,7 +153,7 @@ func (db *PostgresInterface) DeleteTrip(tripID string, userID string) error {
 	return err
 }
 
-// Close will close the current mongo connection
+// Close will close the current postgres connection
 func (db *PostgresInterface) Close() {
 	db.conn.Close()
 }
