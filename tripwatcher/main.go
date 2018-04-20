@@ -35,12 +35,13 @@ type RouteGenerator interface {
 // wraps api.RouteFinder
 type DefaultRouteGenerator struct {
 	finder api.RouteFinder
+	db     api.DatabaseInterface
 }
 
 // NewDefaultRouteGenerator will create an instance of DefaultRouteGenerator
 // @param finder - the finder used to generate a route
-func NewDefaultRouteGenerator(finder api.RouteFinder) *DefaultRouteGenerator {
-	return &DefaultRouteGenerator{finder: finder}
+func NewDefaultRouteGenerator(db api.DatabaseInterface, finder api.RouteFinder) *DefaultRouteGenerator {
+	return &DefaultRouteGenerator{finder: finder, db: db}
 }
 
 func main() {
@@ -74,22 +75,24 @@ func main() {
 		return
 	}
 
+	db := api.NewPostgresInterface()
+	defer db.Close()
 	// watchList will keep track of which trips are already running
 	// so that we don't watch a trip twice
 	watchList := make(map[string]bool)
 	mux := &sync.Mutex{}
-	trips, err := api.GetAllScheduledTrips()
+	trips, err := api.GetAllScheduledTrips(db)
 	if err == nil {
-		watchTrips(trips, finder, watchList, mux)
+		watchTrips(trips, db, finder, watchList, mux)
 	}
 	// check the database for new scheduled trips
 	for _ = range time.Tick(dbCheckFrequency) {
-		trips, err := api.GetAllScheduledTrips()
+		trips, err := api.GetAllScheduledTrips(db)
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
-		watchTrips(trips, finder, watchList, mux)
+		watchTrips(trips, db, finder, watchList, mux)
 	}
 }
 
@@ -101,9 +104,9 @@ func main() {
 //        trips so that we don't double up on a trip and send an alert twice
 // @param mux - used so that we can safely delete trips from the watch list
 // @return the number of new trips now being watched
-func watchTrips(trips []*api.TripSchedule, finder api.RouteFinder, watchList map[string]bool, mux *sync.Mutex) {
+func watchTrips(trips []*api.TripSchedule, db api.DatabaseInterface, finder api.RouteFinder, watchList map[string]bool, mux *sync.Mutex) {
 	// create a generator that uses the input finder to get routes
-	generator := NewDefaultRouteGenerator(finder)
+	generator := NewDefaultRouteGenerator(db, finder)
 	for _, t := range trips {
 		// ensure that we're not already watching this trip
 		mux.Lock()
@@ -116,7 +119,7 @@ func watchTrips(trips []*api.TripSchedule, finder api.RouteFinder, watchList map
 		if !t.Enabled && !api.IsRepeating(t) {
 			// Delete a few hours after the arrival date
 			if tripHasPast(t) {
-				api.DeleteTrip(t.ID, t.User.ID)
+				api.DeleteTrip(db, t.ID, t.User.ID)
 				// delete the trip from the watch list
 				mux.Lock()
 				delete(watchList, t.ID)
@@ -133,16 +136,16 @@ func watchTrips(trips []*api.TripSchedule, finder api.RouteFinder, watchList map
 		go func(trip *api.TripSchedule) {
 			watchTrip(trip, generator)
 			// check that it's still enabled
-			if api.IsEnabled(trip) {
+			if api.IsEnabled(db, trip) {
 				// send alert
 				fmt.Println("Sending alert for", trip.Route.Description)
 				sendNotification(trip.Route, trip.User)
 			}
 			// delete scheduled trip if it's not repeating
 			if !api.IsRepeating(trip) {
-				api.DeleteTrip(trip.ID, trip.User.ID)
+				api.DeleteTrip(db, trip.ID, trip.User.ID)
 			} else {
-				api.SetLastNotificationTime(trip, time.Now().Unix()*1000)
+				api.SetLastNotificationTime(db, trip, time.Now().Unix()*1000)
 			}
 			// delete the trip from the watch list
 			mux.Lock()

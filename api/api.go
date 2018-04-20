@@ -48,24 +48,18 @@ type TripSchedule struct {
 // UpsertUser will add this user if they aren't already added.
 // If they are added then this will update the notification token and
 // the device operating system to the new values
-func UpsertUser(user *UserInfo) error {
-	db := NewPostgresInterface()
-	defer db.Close()
+func UpsertUser(db DatabaseInterface, user *UserInfo) error {
 	return db.UpsertUser(user)
 }
 
 // GetScheduledTrips returns all trips scheduled for this user
-func GetScheduledTrips(user string) ([]TripSchedule, error) {
-	db := NewPostgresInterface()
-	defer db.Close()
+func GetScheduledTrips(db DatabaseInterface, user string) ([]TripSchedule, error) {
 	return db.GetTrips(user)
 }
 
 // GetAllScheduledTrips returns every scheduled trip on this server. This
 // is used by the tripwatcher
-func GetAllScheduledTrips() ([]*TripSchedule, error) {
-	db := NewPostgresInterface()
-	defer db.Close()
+func GetAllScheduledTrips(db DatabaseInterface) ([]*TripSchedule, error) {
 	return db.GetAllScheduledTrips()
 }
 
@@ -74,10 +68,8 @@ func GetAllScheduledTrips() ([]*TripSchedule, error) {
 // @param id - the id of the trip to remove
 // @param userID - this is used to ensure that the user modifying this trip
 // actually scheduled it
-func EnableDisableTrip(id string, userID string) error {
+func EnableDisableTrip(db DatabaseInterface, id string, userID string) error {
 	// toggle trip
-	db := NewPostgresInterface()
-	defer db.Close()
 	return db.EnableDisableTrip(id, userID)
 }
 
@@ -85,33 +77,25 @@ func EnableDisableTrip(id string, userID string) error {
 // @param id - the id of the trip to remove
 // @param userID - this is used to ensure that the user modifying this trip
 // actually scheduled it
-func DeleteTrip(id string, userID string) error {
-	db := NewPostgresInterface()
-	defer db.Close()
+func DeleteTrip(db DatabaseInterface, id string, userID string) error {
 	return db.DeleteTrip(id, userID)
 }
 
 // SetLastNotificationTime records the time that this trip was last watched
 // This is useful to ensure that duplicate notifications aren't sent for
 // the same day
-func SetLastNotificationTime(trip *TripSchedule, timestamp int64) error {
-	db := NewPostgresInterface()
-	defer db.Close()
+func SetLastNotificationTime(db DatabaseInterface, trip *TripSchedule, timestamp int64) error {
 	return db.SetLastNotificationTime(trip, timestamp)
 }
 
 // IsEnabled returns whether the input trip is enabled
-func IsEnabled(trip *TripSchedule) bool {
-	db := NewPostgresInterface()
-	defer db.Close()
+func IsEnabled(db DatabaseInterface, trip *TripSchedule) bool {
 	return db.IsEnabled(trip)
 }
 
 // ScheduleTrip will add this trip to the database
-func ScheduleTrip(trip *TripSchedule) error {
+func ScheduleTrip(db DatabaseInterface, trip *TripSchedule) error {
 	// store trip
-	db := NewPostgresInterface()
-	defer db.Close()
 	err := db.ScheduleTrip(trip)
 	return err
 }

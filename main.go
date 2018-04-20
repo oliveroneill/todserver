@@ -13,9 +13,10 @@ import (
 // TodServer is used for sharing a RouteFinder between requests
 type TodServer struct {
 	finder api.RouteFinder
+	db     api.DatabaseInterface
 }
 
-func registerUserHandler(w http.ResponseWriter, r *http.Request) {
+func (s *TodServer) registerUserHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Error(w, "Invalid request method.", 405)
 	}
@@ -28,26 +29,26 @@ func registerUserHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Invalid json body.", 400)
 	}
-	err = api.UpsertUser(user)
+	err = api.UpsertUser(s.db, user)
 	if err != nil {
 		http.Error(w, "Failed to register", 500)
 	}
 }
 
-func getTripsHandler(w http.ResponseWriter, r *http.Request) {
+func (s *TodServer) getTripsHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		http.Error(w, "Invalid request method.", 405)
 	}
 	params := r.URL.Query()
 	userID := params.Get("user_id")
-	trips, err := api.GetScheduledTrips(userID)
+	trips, err := api.GetScheduledTrips(s.db, userID)
 	if err != nil {
 		http.Error(w, "Couldn't get trips.", 500)
 	}
 	json.NewEncoder(w).Encode(trips)
 }
 
-func scheduleTripHandler(w http.ResponseWriter, r *http.Request) {
+func (s *TodServer) scheduleTripHandler(w http.ResponseWriter, r *http.Request) {
 	// Check method type
 	if r.Method != "POST" {
 		http.Error(w, "Invalid request method.", 405)
@@ -63,13 +64,13 @@ func scheduleTripHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Invalid json body.", 400)
 	}
-	err = api.ScheduleTrip(route)
+	err = api.ScheduleTrip(s.db, route)
 	if err != nil {
 		http.Error(w, "Couldn't schedule trip.", 500)
 	}
 }
 
-func enableDisableTripHandler(w http.ResponseWriter, r *http.Request) {
+func (s *TodServer) enableDisableTripHandler(w http.ResponseWriter, r *http.Request) {
 	// Check method type
 	if r.Method != "POST" {
 		http.Error(w, "Invalid request method.", 405)
@@ -83,13 +84,13 @@ func enableDisableTripHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Invalid json body.", 400)
 	}
-	err = api.EnableDisableTrip(route.ID, route.User.ID)
+	err = api.EnableDisableTrip(s.db, route.ID, route.User.ID)
 	if err != nil {
 		http.Error(w, "Couldn't enable/disable trip.", 500)
 	}
 }
 
-func deleteTripHandler(w http.ResponseWriter, r *http.Request) {
+func (s *TodServer) deleteTripHandler(w http.ResponseWriter, r *http.Request) {
 	// Check method type
 	if r.Method != "DELETE" {
 		http.Error(w, "Invalid request method.", 405)
@@ -103,7 +104,7 @@ func deleteTripHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Invalid json body.", 400)
 	}
-	err = api.DeleteTrip(route.ID, route.User.ID)
+	err = api.DeleteTrip(s.db, route.ID, route.User.ID)
 	if err != nil {
 		http.Error(w, "Couldn't delete trip.", 500)
 	}
@@ -161,12 +162,14 @@ func main() {
 	if len(nxtBusAPIKey) > 0 {
 		finder = api.NewNxtBusFinder(nxtBusAPIKey, mapsFinder)
 	}
-	server := &TodServer{finder: finder}
-	http.HandleFunc("/api/register-user", registerUserHandler)
-	http.HandleFunc("/api/get-scheduled-trips", getTripsHandler)
-	http.HandleFunc("/api/schedule-trip", scheduleTripHandler)
-	http.HandleFunc("/api/enable-disable-trip", enableDisableTripHandler)
-	http.HandleFunc("/api/delete-trip", deleteTripHandler)
+	db := api.NewPostgresInterface()
+	defer db.Close()
+	server := &TodServer{finder: finder, db: db}
+	http.HandleFunc("/api/register-user", server.registerUserHandler)
+	http.HandleFunc("/api/get-scheduled-trips", server.getTripsHandler)
+	http.HandleFunc("/api/schedule-trip", server.scheduleTripHandler)
+	http.HandleFunc("/api/enable-disable-trip", server.enableDisableTripHandler)
+	http.HandleFunc("/api/delete-trip", server.deleteTripHandler)
 	http.HandleFunc("/api/get-routes", server.getRoutesHandler)
 	log.Fatal(http.ListenAndServe(":80", nil))
 }

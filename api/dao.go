@@ -18,6 +18,8 @@ type DatabaseInterface interface {
 	DeleteTrip(tripID string, userID string) error
 	// GetAllScheduledTrips will list of trips currently persisted
 	GetAllScheduledTrips() ([]*TripSchedule, error)
+	// IsEnabled will return true if the specified trip is enabled
+	IsEnabled(trip *TripSchedule) bool
 	// Close the database connection
 	Close()
 }

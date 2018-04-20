@@ -17,14 +17,14 @@ type PostgresInterface struct {
 }
 
 // NewPostgresInterface - use to create a new mongo connection
-func NewPostgresInterface() PostgresInterface {
+func NewPostgresInterface() *PostgresInterface {
 	db := new(PostgresInterface)
 	conn, err := sql.Open("postgres", "host=postgres user=docker dbname=docker sslmode=disable")
 	if err != nil {
 		log.Fatal(err)
 	}
 	db.conn = conn
-	return *db
+	return db
 }
 
 // ScheduleTrip will store this trip in a Postgres database under the trips
